@@ -24,8 +24,6 @@ def even_fib_sum(N=4e6):
     values = np.array(list(generated))[2::3]    # slice out the even numbers
     return sum(values)                          # return the sum
 
-
-
 if __name__ == "__main__":
-    print(even_fib_sum())
+    # print(even_fib_sum())
     pass
