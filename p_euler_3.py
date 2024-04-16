@@ -37,7 +37,7 @@ def largest_prime_factor(n):
 
 
 if __name__ == "__main__":
-    print(largest_prime_factor(600851475141))
+    # print(largest_prime_factor(600851475143))
     pass
 
 """ My failed first attempt due to trying to allocate too much memory """
