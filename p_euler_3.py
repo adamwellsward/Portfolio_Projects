@@ -26,18 +26,19 @@ def primes_fast(N):
 
 def largest_prime_factor(n):
     """ My second attempt that worked. 
-    This approach isn't the most versatile and scalable, but it works for this problem
+    This approach has been scaled to work for any number
     """
     factors = []
-    all_primes = primes_fast(100001)    # compute the list of primes
+    all_primes = primes_fast(int(np.sqrt(n)+1))    # compute the list of primes
     for p in all_primes:
         if n % p == 0:                  # get the factors of n
             factors.append(p)
-    return factors, factors[-1]         # return the largest one
+    return factors, factors[-1] if len(factors) > 0 else None        # return the largest one
 
 
 if __name__ == "__main__":
     # print(largest_prime_factor(600851475143))
+    # print(largest_prime_factor(51))
     pass
 
 """ My failed first attempt due to trying to allocate too much memory """
