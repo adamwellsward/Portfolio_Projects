@@ -14,5 +14,5 @@ def mult_3_5(n):
     return sum(three) + sum(five)   # return the sum of both arrays
 
 if __name__ == "__main__":
-    # print(mult_3_5(1000))
+    print(mult_3_5(1000))
     pass

@@ -26,5 +26,5 @@ def primes_fast(N):
     return primes_list
 
 if __name__ == "__main__":
-    # print(primes_fast(10001)[-1])
+    print(primes_fast(10001)[-1])
     pass

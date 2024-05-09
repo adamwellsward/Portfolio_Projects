@@ -25,5 +25,5 @@ def even_fib_sum(N=4e6):
     return sum(values)                          # return the sum
 
 if __name__ == "__main__":
-    # print(even_fib_sum())
+    print(even_fib_sum())
     pass

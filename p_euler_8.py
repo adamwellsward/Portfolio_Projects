@@ -20,5 +20,5 @@ def product_13():
     return largest_prod
 
 if __name__ == "__main__":
-    # print(product_13())
+    print(product_13())
     pass

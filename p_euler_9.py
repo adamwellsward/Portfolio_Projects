@@ -17,5 +17,5 @@ def pyth_triplet():
     return -1
 
 if __name__ == "__main__":
-    # print(pyth_triplet())
+    print(pyth_triplet())
     pass

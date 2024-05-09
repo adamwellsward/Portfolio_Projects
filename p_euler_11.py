@@ -34,5 +34,5 @@ Solution found once I reached 87.
 
 if __name__ == "__main__":
     # print(np.where(nums>=87, 1, 0))
-    # print(87*97*94*89)
+    print(87*97*94*89)
     pass
