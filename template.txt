@@ -1,0 +1,14 @@
+# p_euler_.py
+"""
+Project Euler Problem  Solution
+Adam Ward
+"""
+
+import numpy as numpy
+
+def function():
+    pass
+
+if __name__ == "__main__":
+    print(function())
+    pass
