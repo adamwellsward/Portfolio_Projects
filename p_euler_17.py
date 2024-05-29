@@ -50,7 +50,7 @@ def letters_used(N):
             return len(words[num[0]] + "ty" + words[last])
 
     letters = 0
-    # run through all of the numbers and add up the 
+    # run through all of the numbers and add up the letters
     for num in range(1,N+1):
         num = str(num)
         if len(num) == 1:
