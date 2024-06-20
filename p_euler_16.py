@@ -3,6 +3,7 @@
 Project Euler Problem 16 Solution
 Adam Ward
 """
+
 import numpy as np
 
 def power_sum():
