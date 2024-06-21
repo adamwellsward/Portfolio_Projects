@@ -1,12 +1,13 @@
-# p_euler_18.py
+# p_euler_67.py
 """
-Project Euler Problem 18 Solution
+Project Euler Problem 67 Solution
 Adam Ward
 """
 
-import numpy as np
+import numpy as numpy
 
-def small_tri_sum(file="small_tri.txt"):
+# this uses the same code as Problem 18
+def large_tri_sum(file="large_tri.txt"):
     # read in the triangle
     with open(file) as f:
         tri = [[int(num) for num in line.strip().split(' ')] for line in f.readlines()]
@@ -20,5 +21,5 @@ def small_tri_sum(file="small_tri.txt"):
     return tri[0][0]
 
 if __name__ == "__main__":
-    print(small_tri_sum())
+    print(large_tri_sum())
     pass
