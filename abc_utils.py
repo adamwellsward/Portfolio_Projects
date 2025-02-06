@@ -3,14 +3,15 @@ import pandas as pd
 import re
 import os
 
-def abc_to_states(abc_text):
+def abc_to_states(abc_text: str, chords_per_state: int):
     abc_score = m21.converter.parse(abc_text, format='abc')
     # The score should only have one part, which contains notes, chords, etc.
     part = abc_score.parts[0]
 
     # Flatten the part to iterate through everything in it.
-    # See also m21.Stream.notes, which is an iterator only containing notes, chords, etc. No rests.
-    # It looks like there's also a way to get timestamps in seconds. See Stream.seconds
+    # TODO: See also m21.Stream.notes, which is an iterator only containing notes, chords, etc. No rests.
+    # TODO: It looks like there's also a way to get timestamps in seconds. See Stream.seconds
+    # TODO: use element.quarterLength to "standardize" meter
     for element in part.flatten().notesAndRests:
         if isinstance(element, m21.chord.Chord):
             measure = element.measureNumber
@@ -24,8 +25,27 @@ def abc_to_states(abc_text):
             measure = element.measureNumber
             beat = element.quarterLength
             print(f"\nRest:  {element}\n\tMeasure {measure}\n\tDuration {beat}")
-    # TODO: finish with the group
 
+    # Prepare to collect states
+    states = []
+    current_key = None
+
+    if chords_per_state != 1:
+        raise Exception('Not implemented')
+    for index, element in enumerate(part.flatten()):
+        if isinstance(element, m21.key.Key):
+            current_key = element
+        if isinstance(element, m21.harmony.ChordSymbol):
+            # Make sure the chord is relative to the current key
+            if current_key is None:
+                raise Exception('Current key unknown')
+            element.key = current_key
+            states.append(pd.Series({
+                'measure': element.measureNumber,
+                'beat': element.beat,
+                'chord': element.romanNumeral.romanNumeral
+            }))
+    return pd.DataFrame(states)
 
 def dataset_to_abc(dataset_abc_text: str, label, reference_number):
     """ 
@@ -100,7 +120,8 @@ def load_harmonization_train_test(local=True):
 if __name__ == '__main__':
     train_set, test_set = load_harmonization_train_test()
 
-    abc_text = train_set.sample(1)['output'].item()
-    abc_parsed = abc_to_states(abc_text)
-    print()
-    print(abc_text)
+    abc_texts = [train_set.sample(1)['output'].item() for _ in range(100)]
+    for abc_text in abc_texts:
+        abc_parsed = abc_to_states(abc_text, 1)
+        print(abc_parsed)
+        print()
