@@ -1,0 +1,106 @@
+import music21 as m21
+import pandas as pd
+import re
+import os
+
+def abc_to_states(abc_text):
+    abc_score = m21.converter.parse(abc_text, format='abc')
+    # The score should only have one part, which contains notes, chords, etc.
+    part = abc_score.parts[0]
+
+    # Flatten the part to iterate through everything in it.
+    # See also m21.Stream.notes, which is an iterator only containing notes, chords, etc. No rests.
+    # It looks like there's also a way to get timestamps in seconds. See Stream.seconds
+    for element in part.flatten().notesAndRests:
+        if isinstance(element, m21.chord.Chord):
+            measure = element.measureNumber
+            beat = element.quarterLength
+            print(f"\nChord: {element}\n\tMeasure {measure}\n\tDuration {beat}")
+        elif isinstance(element, m21.note.Note):
+            measure = element.measureNumber
+            beat = element.quarterLength
+            print(f"\nNote:  {element}\n\tMeasure {measure}\n\tDuration {beat}")
+        elif isinstance(element, m21.note.Rest):
+            measure = element.measureNumber
+            beat = element.quarterLength
+            print(f"\nRest:  {element}\n\tMeasure {measure}\n\tDuration {beat}")
+    # TODO: finish with the group
+
+
+def dataset_to_abc(dataset_abc_text: str, label, reference_number):
+    """ 
+    Given a poorly formatted string of ABC from the dataset, reformats metadata
+    so that ABC readers can parse it well.
+    """
+    # Remove extra whitespace
+    fixed_text = dataset_abc_text.strip()
+    # Remove task tag
+    fixed_text = re.sub(r'^%%\w+\s*', '', fixed_text)
+    # Split metadata from the tune
+    metadata, tune = fixed_text.split('|', 1)
+    # Add newlines to metadata only where needed (after the first occurrence of each metadata key)
+    metadata = re.sub(r"(\S:\S+)(?=\s)(?!\n)", r"\1\n", metadata)
+    
+    # Add reference number and title (only add if they don't exist already)
+    if not re.search(r'^\s*X:', metadata):
+        metadata = f'X:{reference_number}\n' + metadata
+    if not re.search(r'^\s*T:', metadata):
+        metadata = f'T:{label} {reference_number}\n' + metadata
+    
+    fixed_text = metadata + '|' + tune
+    return fixed_text
+
+def load_dataset_df(*, train: bool = True, local: bool = True) -> pd.DataFrame:
+    """ 
+    Loads the melodyhub dataset from HuggingFace as a pandas DataFrame. Must pip
+    install `fsspec` and `huggingface_hub`.
+
+    Keyword parameters:
+
+    - train (bool): True for the train set, False for the validation set
+
+    - local (bool): True to use the data in `./melodyhub`, False to download directly
+    from HuggingFace 
+    """
+    splits = {'train': 'train.jsonl', 'validation': 'validation.jsonl'}
+    # Select dataset based on `train` parameter
+    split = 'train' if train else 'validation'
+    # Set path based on `local` parameter
+    path = "./melodyhub/" if local else "hf://datasets/sander-wood/melodyhub/"
+    dataset = pd.read_json(
+        path + splits[split],
+        lines=True
+    )
+    return dataset
+
+def load_harmonization_train_test(local=True):
+    """ 
+    Loads both train and test (validation) melodyhub datasets, returning only
+    the lines for the 'harmonization' task. Puts the ABC input column into
+    standard ABC format, with appropriate newlines.
+    """
+    train_set = load_dataset_df(train=True, local=local)
+    test_set = load_dataset_df(train=False, local=local)
+
+    train_set = train_set[train_set['task'] == 'harmonization']
+    test_set = test_set[test_set['task'] == 'harmonization']
+
+    for label, dataset in [('Train tune', train_set), ('Test tune', test_set)]:
+        # Format tune metadata correctly
+        dataset['input'] = dataset.apply(
+            lambda row: dataset_to_abc(row['input'], label, row.name), axis=1
+        )
+        dataset['output'] = dataset.apply(
+            lambda row: dataset_to_abc(row['output'], label, row.name), axis=1
+        )
+        
+    return train_set, test_set
+
+
+if __name__ == '__main__':
+    train_set, test_set = load_harmonization_train_test()
+
+    abc_text = train_set.sample(1)['output'].item()
+    abc_parsed = abc_to_states(abc_text)
+    print()
+    print(abc_text)
