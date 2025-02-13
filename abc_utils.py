@@ -45,6 +45,7 @@ def abc_to_states(abc_text: str, chords_per_state: int):
                 'beat': element.beat,
                 'chord': element.romanNumeral.romanNumeral
             }))
+    
     return pd.DataFrame(states)
 
 def dataset_to_abc(dataset_abc_text: str, label, reference_number):
@@ -118,7 +119,7 @@ def load_harmonization_train_test(local=True):
 
 
 if __name__ == '__main__':
-    train_set, test_set = load_harmonization_train_test()
+    train_set, _ = load_harmonization_train_test()
 
     abc_texts = [train_set.sample(1)['output'].item() for _ in range(100)]
     for abc_text in abc_texts:
