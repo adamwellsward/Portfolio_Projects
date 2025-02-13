@@ -2,6 +2,58 @@ import music21 as m21
 import pandas as pd
 import re
 import os
+import typing
+
+def abc_to_dataframe(abc_text: str, chords_style='simple_numerals'):
+    if chords_style != 'simple_numerals':
+        raise Exception('Other chord styles have not been implemented.')
+
+    # Prepare to collect chords and notes as `states`
+    states_keys = ['measure', 'beat', 'chord', 'melody']
+    states = {key: [] for key in states_keys}
+
+    current_key = None
+    current_melody = None
+    current_chord = None
+
+    def _append_line(
+            measure: int, 
+            beat: float, 
+            chord: m21.harmony.ChordSymbol, 
+            melody: Union[m21.note.Note, m21.note.Rest],
+            key: m21.key.Key
+        ):
+        states['measure'].append(measure)
+        states['beat'].append(beat)
+        states['chord']: chord.romanNumeral.romanNumeral
+        
+        # If rest, use an hyphen
+        if isinstance(melody, m21.note.Rest):
+            states['melody'] = '-'
+        elif isinstance(melody, m21.note.Note):
+            # TODO: make it relative to the key
+            states['melody'] = note.midi
+
+    for index, element in enumerate(part.flatten()):
+        if isinstance(element, m21.key.Key):
+            current_key = element
+        if isinstance(element, m21.harmony.ChordSymbol):
+            # Make sure the chord is relative to the current key
+            if current_key is None:
+                raise Exception('Current key unknown')
+            
+            element.key = current_key
+            current_chord = element
+            
+            states.append(pd.Series({
+                'measure': element.measureNumber,
+                'beat': element.beat,
+                'chord': element.romanNumeral.romanNumeral
+            })) 
+            # TODO: use _append_line() to add states wheneverf the note or chord changes.
+
+    
+    return pd.DataFrame(states)
 
 def abc_to_states(abc_text: str, chords_per_state: int):
     abc_score = m21.converter.parse(abc_text, format='abc')
