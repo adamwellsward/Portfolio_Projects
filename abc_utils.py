@@ -4,7 +4,9 @@ import re
 import os
 import typing
 
-def abc_to_dataframe(abc_text: str, chords_style='simple_numerals'):
+def abc_to_dataframe(abc_text: str, 
+                     chords_style='simple_numerals',
+                     include_mode: bool=False):
     if chords_style != 'simple_numerals':
         raise Exception('Other chord styles have not been implemented.')
 
@@ -21,7 +23,8 @@ def abc_to_dataframe(abc_text: str, chords_style='simple_numerals'):
             beat: float, 
             chord: m21.harmony.ChordSymbol, 
             melody: Union[m21.note.Note, m21.note.Rest],
-            key: m21.key.Key
+            key: m21.key.Key,
+            include_mode: bool
         ):
         states['measure'].append(measure)
         states['beat'].append(beat)
@@ -31,8 +34,18 @@ def abc_to_dataframe(abc_text: str, chords_style='simple_numerals'):
         if isinstance(melody, m21.note.Rest):
             states['melody'] = '-'
         elif isinstance(melody, m21.note.Note):
-            # TODO: make it relative to the key
-            states['melody'] = note.midi
+            # TODO: add more modes
+            mode_shift = 0  
+            if include_mode:
+                mode = key.mode
+                if mode == 'major':
+                    mode_shift = 0
+                elif mode == 'minor':
+                    mode_shift = -3
+                else:
+                    raise Exception(f'Mode is {mode}. Not major or minor')
+            key_shift = (key.tonic.midi % 12) + mode_shift
+            states['melody'] = note.midi - key_shift 
 
     for index, element in enumerate(part.flatten()):
         if isinstance(element, m21.key.Key):
