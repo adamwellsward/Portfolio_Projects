@@ -3,12 +3,15 @@ import pandas as pd
 import re
 import os
 import typing
+from typing import Union
 
 def abc_to_dataframe(abc_text: str, 
                      chords_style='simple_numerals',
                      include_mode: bool=False):
     if chords_style != 'simple_numerals':
         raise Exception('Other chord styles have not been implemented.')
+    
+    part = m21.converter.parse(abc_text, format='abc').parts[0]
 
     # Prepare to collect chords and notes as `states`
     states_keys = ['measure', 'beat', 'chord', 'melody']
@@ -24,15 +27,18 @@ def abc_to_dataframe(abc_text: str,
             chord: m21.harmony.ChordSymbol, 
             melody: Union[m21.note.Note, m21.note.Rest],
             key: m21.key.Key,
-            include_mode: bool
+            include_mode: bool = False
         ):
-        states['measure'].append(measure)
-        states['beat'].append(beat)
-        states['chord']: chord.romanNumeral.romanNumeral
+        new_measure = measure
+        new_beat = beat
+        new_chord = chord.romanNumeral.romanNumeral if chord else '-'
+        
         
         # If rest, use an hyphen
-        if isinstance(melody, m21.note.Rest):
-            states['melody'] = '-'
+        if not melody:
+            new_melody = '-'
+        elif isinstance(melody, m21.note.Rest):
+            new_melody = '-'
         elif isinstance(melody, m21.note.Note):
             # TODO: add more modes
             mode_shift = 0  
@@ -45,8 +51,19 @@ def abc_to_dataframe(abc_text: str,
                 else:
                     raise Exception(f'Mode is {mode}. Not major or minor')
             key_shift = (key.tonic.midi % 12) + mode_shift
-            states['melody'] = note.midi - key_shift 
-
+            new_melody = melody.pitch.midi - key_shift
+        else:
+            raise Exception('Melody should be a rest or a note')
+        
+        # Check if this should even be a new line
+        if len(states['melody']) > 0 and new_chord == states['chord'][-1] and new_melody == states['melody'][-1]:
+            return
+            
+        states['measure'].append(new_measure)
+        states['beat'].append(new_beat)
+        states['chord'].append(new_chord)
+        states['melody'].append(new_melody)
+    
     for index, element in enumerate(part.flatten()):
         if isinstance(element, m21.key.Key):
             current_key = element
@@ -58,12 +75,21 @@ def abc_to_dataframe(abc_text: str,
             element.key = current_key
             current_chord = element
             
-            states.append(pd.Series({
-                'measure': element.measureNumber,
-                'beat': element.beat,
-                'chord': element.romanNumeral.romanNumeral
-            })) 
-            # TODO: use _append_line() to add states wheneverf the note or chord changes.
+        if isinstance(element, m21.note.Note):
+            if current_key is None:
+                raise Exception('Current key unknown')
+            
+            element.key = current_key
+            current_melody = element
+        
+        # Append the new state
+        _append_line(
+            element.measureNumber,
+            element.beat,
+            current_chord,
+            current_melody,
+            current_key
+        )
 
     
     return pd.DataFrame(states)
@@ -187,7 +213,4 @@ if __name__ == '__main__':
     train_set, _ = load_harmonization_train_test()
 
     abc_texts = [train_set.sample(1)['output'].item() for _ in range(100)]
-    for abc_text in abc_texts:
-        abc_parsed = abc_to_states(abc_text, 1)
-        print(abc_parsed)
-        print()
+    print(abc_to_dataframe(abc_texts[0]))
