@@ -107,7 +107,7 @@ def abc_to_dataframe(abc_text: str,
             element.key = current_key
             current_chord = element
             
-        elif isinstance(element, m21.note.Note):
+        elif isinstance(element, (m21.note.Note, m21.note.Rest)):
             if current_key is None:
                 raise Exception('Current key unknown')
             
@@ -137,7 +137,9 @@ def dataset_to_abc(dataset_abc_text: str, label, reference_number):
         metadata = f'T:{label} {reference_number}\n' + metadata
     
     # Fix key changes throughout tune
-    # TODO: add new lines as in 3.9 of   https://trillian.mit.edu/~jc/music/doc/ABC.html  
+    # TODO: still not processing key changes in abc_to_dataframe
+    key_regex = re.compile(r'\[K:([^\]]{1,2})\]')
+    tune = key_regex.sub(r'\n[K:\1]\n', tune)
 
     fixed_text = metadata + '|' + tune
     return fixed_text
@@ -192,6 +194,6 @@ def load_harmonization_train_test(local=True):
 if __name__ == '__main__':
     train_set, _ = load_harmonization_train_test()
 
-    abc_text = train_set.iloc[6]['output']
+    abc_text = train_set.iloc[3]['output']
     df = abc_to_dataframe(abc_text)
     print()
