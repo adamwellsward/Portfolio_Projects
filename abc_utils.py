@@ -4,6 +4,7 @@ import numpy as np
 import re
 import os
 import typing
+from tqdm import tqdm
 from typing import Union
 
 ROMAN_NUMERAL_MAP = {
@@ -256,12 +257,22 @@ def load_harmonization_train_test(local=True):
         
     return train_set, test_set
 
-
 if __name__ == '__main__':
     train_set, _ = load_harmonization_train_test()
 
-    abc_text = train_set.iloc[8]['output']
-    df = abc_to_dataframe(abc_text)
+    bad_songs = []
+    for i, row in tqdm(list(train_set.iterrows())):
+        try:
+            abc_to_dataframe(row['output'])
+        except:
+            bad_songs.append(row)
+            print(row['output'])
 
-    print(dataframe_to_states(df, 1, 0))
+    df = abc_to_dataframe(train_set.iloc[12]['output'])
+    with open('bad_songs.txt', 'a') as file:
+        file.write(str([song.index for song in bad_songs]))
+        for song in bad_songs:
+            file.write(song['output'])
+
+    print(dataframe_to_states(df, 3, 2))
     print()

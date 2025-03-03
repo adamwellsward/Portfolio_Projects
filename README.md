@@ -5,3 +5,8 @@ The [dataset we are using, "melodyhub", is located on HuggingFace](https://huggi
 Necessary packages:
 - [music21](https://www.music21.org/music21docs/)
 - pandas
+
+
+# Ideas
+- seqlearn
+- pomegranite
