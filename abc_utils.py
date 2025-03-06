@@ -228,11 +228,108 @@ def load_dataset_df(*, train: bool = True, local: bool = True) -> pd.DataFrame:
     split = 'train' if train else 'validation'
     # Set path based on `local` parameter
     path = "./melodyhub/" if local else "hf://datasets/sander-wood/melodyhub/"
+
     dataset = pd.read_json(
         path + splits[split],
         lines=True
     )
     return dataset
+
+def load_datasets(test_ratio=0.3, 
+                  val_ratio=0.2, 
+                  return_train_val=True,
+                  return_test=False,
+                  recreate_dataset=False, 
+                  local=True):
+    """ 
+    Loads both train, val, and test dataset each of which come preprocessed by
+    the 'abc_to_dataframe' function in `abc_utils.py`. Note the 
+    the lines for the 'harmonization' task. Puts the ABC input column into
+    standard ABC format, with appropriate newlines.
+    """
+    # find the ratio to split the data
+    train_ratio = (1-test_ratio) * (1-val_ratio)
+    val_ratio = (1-test_ratio) * (val_ratio)
+
+    dataset_path = './curated_datasets'
+    train_path = os.path.join('dataset_path', f'train_{train_ratio}.parquet')
+    test_path = os.path.join('dataset_path', f'val_{val_ratio}.parquet')
+    val_path = os.path.join('dataset_path', f'test_{test_ratio}.parquet')
+
+    # These are the complementary path with lengths
+    train_len_path = os.path.join('dataset_path', f'train_{train_ratio}_lengths.txt')
+    test_len_path = os.path.join('dataset_path', f'val_{val_ratio}_lengths.txt')
+    val_len_path = os.path.join('dataset_path', f'test_{test_ratio}_lengths.txt')
+
+    if not os.path.exists(dataset_path):
+        os.makedirs(dataset_path)
+
+    if (recreate_dataset and 
+        (not os.path.isfile(train_path)) and 
+        (not os.path.isfile(val_path)) and 
+        (not os.path.isfile(test_path))):
+
+        # Load old_train and val set from melody hub or local
+        old_train_set, old_val_set = load_harmonization_train_test(local=local)
+        full_set = pd.concat([old_train_set, old_val_set])
+
+        print('Converting the full set of data into dataframes')
+        preprocessed_full_set = [abc_to_dataframe(song) for song in full_set]
+
+        full_set_len = len(preprocessed_full_set)
+        draw = np.random.choice(full_set_len, size=full_set, replace=False)
+        
+        train_size = int(full_set_len*train_ratio)
+        val_size = int(full_set_len*val_ratio)
+
+        print('Saving train_set')
+        train_set = [df for df in preprocessed_full_set[:train_size]]
+        train_set_lengths = [len(df) for df in preprocessed_full_set[:train_size]]
+        train_df = pd.concat(train_set)
+        train_df.to_parquet(train_path)
+        train_len_series = pd.Series(train_set_lengths)
+        train_len_series.to_csv(train_len_path)
+
+        print('Saving val_set')
+        val_set = [df for df in preprocessed_full_set[train_size:]]
+        val_set_lengths = [len(df) for df in preprocessed_full_set[train_size:]]
+        val_df = pd.concat(val_set)
+        val_df.to_parquet(train_path)
+        val_len_series = pd.Series(val_set_lengths)
+        val_len_series.to_csv(val_len_path)
+
+        print('Saving test_set')
+        test_set = [df for df in preprocessed_full_set[train_size+val_size:]]
+        test_set_lengths = [len(df) for df in preprocessed_full_set[train_size+val_size:]]
+        test_df = pd.concat(test_set)
+        test_df.to_parquet(test_path)
+        test_len_series = pd.Series(test_set_lengths)
+        test_len_series.to_csv(test_len_path)
+
+    else:
+        # get main dfs
+        test_df = pd.read_parquet(test_path)
+        val_df = pd.read_parquet(val_path)
+        train_df = pd.read_parquet(train_path)
+
+        train_len_series = pd.read_csv(train_len_path)
+        val_len_series = pd.read_csv(val_len_path)
+        test_len_series = pd.read_csv(test_len_path)
+
+    list_to_return = []
+    if return_train_val:
+        list_to_return.append(train_df)
+        list_to_return.append(train_len_series)
+        list_to_return.append(val_df)
+        list_to_return.append(val_len_series)
+
+    if return_test:
+        list_to_return.append(test_df)
+        list_to_return.append(test_len_series)
+
+    return list_to_return
+
+
 
 def load_harmonization_train_test(local=True):
     """ 
@@ -258,21 +355,22 @@ def load_harmonization_train_test(local=True):
     return train_set, test_set
 
 if __name__ == '__main__':
-    train_set, _ = load_harmonization_train_test()
+    load_datasets()
 
-    bad_songs = []
-    for i, row in tqdm(list(train_set.iterrows())):
-        try:
-            abc_to_dataframe(row['output'])
-        except:
-            bad_songs.append(row)
-            print(row['output'])
+    # train_set, _ = load_harmonization_train_test()
+    # bad_songs = []
+    # for i, row in tqdm(list(train_set.iterrows())):
+    #     try:
+    #         abc_to_dataframe(row['output'])
+    #     except:
+    #         bad_songs.append(row)
+    #         print(row['output'])
 
-    df = abc_to_dataframe(train_set.iloc[12]['output'])
-    with open('bad_songs.txt', 'a') as file:
-        file.write(str([song.index for song in bad_songs]))
-        for song in bad_songs:
-            file.write(song['output'])
+    # df = abc_to_dataframe(train_set.iloc[12]['output'])
+    # with open('bad_songs.txt', 'a') as file:
+    #     file.write(str([song.index for song in bad_songs]))
+    #     for song in bad_songs:
+    #         file.write(song['output'])
 
-    print(dataframe_to_states(df, 3, 2))
-    print()
+    # print(dataframe_to_states(df, 3, 2))
+    # print()
