@@ -12,11 +12,11 @@ ROMAN_NUMERAL_MAP = {
 
     "I": 1, "#I": 2, "bII": 2, "II": 3, "#II": 4, "bIII": 4, "III": 5, 
     "#III": 6, "bIV": 6, "IV": 6, "#IV": 7, "bV": 7, "V": 8, "#V": 9, 
-    "bVI": 9, "VI": 10, "#VI": 11, "bVII": 11, "VII": 12,
+    "bVI": 9, "VI": 10, "#VI": 11, "bVII": 11, "VII": 12, "bI": 12,
 
     "i": 13, "#i": 14, "bii": 14, "ii": 15, "#ii": 16, "biii": 16, "iii": 17, 
     "#iii": 18, "biv": 18, "iv": 18, "#iv": 19, "bv": 19, "v": 20, "#v": 21, 
-    "bvi": 21, "vi": 22, "#vi": 23, "bvii": 23, "vii": 24, "bI": 24
+    "bvi": 21, "vi": 22, "#vi": 23, "bvii": 23, "vii": 24, "bi": 24
 }
 
 CHORD_INT_MAP = {v: k for k, v in ROMAN_NUMERAL_MAP.items()}
