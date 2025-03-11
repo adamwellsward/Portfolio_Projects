@@ -6,7 +6,10 @@ import os
 import typing
 from tqdm import tqdm
 from typing import Union
-
+# this is used because there are some fractions floating somewhere
+from fractions import Fraction
+RANDOM_STATE = 42
+np.random.seed(RANDOM_STATE)
 ROMAN_NUMERAL_MAP = {
     "-": 0, 
 
@@ -306,73 +309,90 @@ def load_datasets(test_ratio=0.3,
     standard ABC format, with appropriate newlines.
     """
     # find the ratio to split the data
-    train_ratio = (1-test_ratio) * (1-val_ratio)
-    val_ratio = (1-test_ratio) * (val_ratio)
+    train_ratio = np.round((1-test_ratio) * (1-val_ratio), 2)
+    val_ratio = np.round((1-test_ratio) * (val_ratio), 2)
 
     dataset_path = './curated_datasets'
-    train_path = os.path.join('dataset_path', f'train_{train_ratio}.parquet')
-    test_path = os.path.join('dataset_path', f'val_{val_ratio}.parquet')
-    val_path = os.path.join('dataset_path', f'test_{test_ratio}.parquet')
+    train_path = os.path.join(dataset_path, f'train_{train_ratio}.parquet')
+    val_path = os.path.join(dataset_path, f'val_{val_ratio}.parquet')
+    test_path = os.path.join(dataset_path, f'test_{test_ratio}.parquet')
 
     # These are the complementary path with lengths
-    train_len_path = os.path.join('dataset_path', f'train_{train_ratio}_lengths.txt')
-    test_len_path = os.path.join('dataset_path', f'val_{val_ratio}_lengths.txt')
-    val_len_path = os.path.join('dataset_path', f'test_{test_ratio}_lengths.txt')
+    train_len_path = os.path.join(dataset_path, f'train_{train_ratio}_lengths.csv')
+    val_len_path = os.path.join(dataset_path, f'val_{val_ratio}_lengths.csv')
+    test_len_path = os.path.join(dataset_path, f'test_{test_ratio}_lengths.csv')
+
+    # this is where the bad songs will go 
+    train_bad_path = os.path.join(dataset_path, f'train_{train_ratio}_bad_songs.csv')
+    val_bad_path = os.path.join(dataset_path, f'val_{val_ratio}_bad_songs.csv')
+    test_bad_path = os.path.join(dataset_path, f'test_{test_ratio}_bad_songs.csv')
 
     if not os.path.exists(dataset_path):
         os.makedirs(dataset_path)
 
-    if (recreate_dataset and 
-        (not os.path.isfile(train_path)) and 
-        (not os.path.isfile(val_path)) and 
+    if (recreate_dataset) or ( 
+        (not os.path.isfile(train_path)) or 
+        (not os.path.isfile(val_path)) or 
         (not os.path.isfile(test_path))):
 
+        print("Loading Harmonization train and test songs")
         # Load old_train and val set from melody hub or local
         old_train_set, old_val_set = load_harmonization_train_test(local=local)
-        full_set = pd.concat([old_train_set, old_val_set])
+        full_set = pd.concat([old_train_set, old_val_set], ignore_index=True)['output']
+        len_of_full_set = len(full_set)
+        draw = np.arange(len_of_full_set)
 
-        print('Converting the full set of data into dataframes')
-        preprocessed_full_set = [abc_to_dataframe(song) for song in full_set]
+        np.random.shuffle(draw)
 
-        full_set_len = len(preprocessed_full_set)
-        draw = np.random.choice(full_set_len, size=full_set, replace=False)
-        
-        train_size = int(full_set_len*train_ratio)
-        val_size = int(full_set_len*val_ratio)
+        train_size = int(len_of_full_set*train_ratio)
+        val_size = int(len_of_full_set*val_ratio)
+        train_slice = np.s_[:train_size]
+        val_slice = np.s_[train_size:train_size+val_size]
+        test_slice = np.s_[train_size+val_size:]
 
-        print('Saving train_set')
-        train_set = [df for df in preprocessed_full_set[:train_size]]
-        train_set_lengths = [len(df) for df in preprocessed_full_set[:train_size]]
-        train_df = pd.concat(train_set)
-        train_df.to_parquet(train_path)
-        train_len_series = pd.Series(train_set_lengths)
-        train_len_series.to_csv(train_len_path)
+        for slice, name, df_path, len_path, bad_path in [(train_slice, "train_set", train_path, train_len_path, train_bad_path), 
+                                  (val_slice, "val_set", val_path, val_len_path, val_bad_path), 
+                                  (test_slice, "test_set", test_path, test_len_path, test_bad_path)]:
+            preprocessed_set = []
+            set_lengths = []
+            bad_songs = []
 
-        print('Saving val_set')
-        val_set = [df for df in preprocessed_full_set[train_size:]]
-        val_set_lengths = [len(df) for df in preprocessed_full_set[train_size:]]
-        val_df = pd.concat(val_set)
-        val_df.to_parquet(train_path)
-        val_len_series = pd.Series(val_set_lengths)
-        val_len_series.to_csv(val_len_path)
+            print(f'Making {name}')
+            for i in tqdm(draw[slice]):
+                song = full_set.loc[i]
+                try:
+                    song_df = abc_to_dataframe(song)
+                    preprocessed_set.append(song_df)
+                    set_lengths.append(len(song_df))
+                    del song_df
+                except:
+                    print('bad')
+                    bad_songs.append(i)
+                
 
-        print('Saving test_set')
-        test_set = [df for df in preprocessed_full_set[train_size+val_size:]]
-        test_set_lengths = [len(df) for df in preprocessed_full_set[train_size+val_size:]]
-        test_df = pd.concat(test_set)
-        test_df.to_parquet(test_path)
-        test_len_series = pd.Series(test_set_lengths)
-        test_len_series.to_csv(test_len_path)
+            print(f'Saving {name}')
+            # save the good song dataset
+            df = pd.concat(preprocessed_set)
+            df.beat = df.beat.apply(float)
+            df.to_parquet(df_path)
 
-    else:
-        # get main dfs
-        test_df = pd.read_parquet(test_path)
-        val_df = pd.read_parquet(val_path)
-        train_df = pd.read_parquet(train_path)
+            # save the lengths of the good songs
+            len_series = pd.Series(set_lengths, name="lengths")
+            len_series.to_csv(len_path, index=False)
 
-        train_len_series = pd.read_csv(train_len_path)
-        val_len_series = pd.read_csv(val_len_path)
-        test_len_series = pd.read_csv(test_len_path)
+            # save the series of the bad songs
+            bad_series = pd.Series(bad_songs, name='song_index')
+            bad_series.to_csv(bad_path, index=False)
+
+
+    # get main dfs
+    test_df = pd.read_parquet(test_path)
+    val_df = pd.read_parquet(val_path)
+    train_df = pd.read_parquet(train_path)
+
+    train_len_series = pd.read_csv(train_len_path)
+    val_len_series = pd.read_csv(val_len_path)
+    test_len_series = pd.read_csv(test_len_path)
 
     list_to_return = []
     if return_train_val:
@@ -413,7 +433,7 @@ def load_harmonization_train_test(local=True):
     return train_set, test_set
 
 if __name__ == '__main__':
-    load_datasets()
+    print(load_datasets())
 
     # train_set, _ = load_harmonization_train_test()
     # bad_songs = []
