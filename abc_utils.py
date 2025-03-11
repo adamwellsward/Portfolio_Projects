@@ -13,9 +13,11 @@ ROMAN_NUMERAL_MAP = {
     "I": 1, "#I": 2, "bII": 2, "II": 3, "#II": 4, "bIII": 4, "III": 5, 
     "#III": 6, "bIV": 6, "IV": 6, "#IV": 7, "bV": 7, "V": 8, "#V": 9, 
     "bVI": 9, "VI": 10, "#VI": 11, "bVII": 11, "VII": 12, "bI": 12,
+    "bVI": 9, "VI": 10, "#VI": 11, "bVII": 11, "VII": 12, "bI": 12,
 
     "i": 13, "#i": 14, "bii": 14, "ii": 15, "#ii": 16, "biii": 16, "iii": 17, 
     "#iii": 18, "biv": 18, "iv": 18, "#iv": 19, "bv": 19, "v": 20, "#v": 21, 
+    "bvi": 21, "vi": 22, "#vi": 23, "bvii": 23, "vii": 24, "bi": 24
     "bvi": 21, "vi": 22, "#vi": 23, "bvii": 23, "vii": 24, "bi": 24
 }
 
@@ -158,7 +160,8 @@ def dataframe_to_states(song_df: pd.DataFrame, chords_per_state: int, melody_per
     
     # Initialize chord and melody states, handling cases where they might be 0
     chord_states = np.empty((n_rows, chords_per_state), dtype=int) if chords_per_state > 0 else np.empty((n_rows, 0), dtype=int)
-    melody_states = np.empty((n_rows, melody_per_state), dtype=int) if melody_per_state > 0 else np.empty((n_rows, 0), dtype=int)
+    melody_states = np.empty((n_rows, melody_per_state + 1), dtype=int) if melody_per_state > 0 else np.empty((n_rows, 0), dtype=int)
+    observations = np.empty(n_rows - 1)
 
     if chords_per_state > 0:
         chord_states[0, :] = 0  # Start with zeros (rests)
@@ -173,15 +176,70 @@ def dataframe_to_states(song_df: pd.DataFrame, chords_per_state: int, melody_per
         if melody_per_state > 0:
             melody_states[i+1, 0:-1] = melody_states[i, 1:]  # Shift left
             melody_states[i+1, -1] = row['melody']  # Append new melody
+        
+        observations[i] = row['melody']
     
-    # Concatenate only if both exist, otherwise return the non-empty one
-    if chords_per_state > 0 and melody_per_state > 0:
-        return np.hstack([chord_states, melody_states])[1:]  # Drop first row
-    elif chords_per_state > 0:
-        return chord_states[1:]
-    elif melody_per_state > 0:
-        return melody_states[1:]
+    # Don't include the current melody note (melody_states[:, :-1]))
 
+    return np.hstack([chord_states, melody_states[:, :-1]])[1:], observations
+
+def states_to_transition(states: np.ndarray, observations: np.ndarray = None):
+    """ 
+    Given a matrix `states` where each row represents a new state, and a vector
+    or matrix `observations` representing the associated observations, return: 
+     - a column-stochastic transition matrix
+     - a column-stochastic emission probability matrix
+     - a matrix where each row is the hidden state associated with that
+       row/column in the transition matrix
+     - a matrix where each row is the observation associated with that
+       row in the emission probability matrix
+    """
+    # Get all unique states. This matrix maps integers to states as in `states`
+    unique_states = np.unique(states, axis=0)
+
+    states_to_index = {tuple(state): i for i, state in enumerate(unique_states)}
+
+    # Represent all states as unique integers
+    states_as_int = np.array([states_to_index[tuple(state)] for i, state in enumerate(states)])
+    # Get pairs of consecutive states to prepare to calculate transition probabilities
+    state_pairs = np.stack([states_as_int[:-1], states_as_int[1:]], axis=1)
+    
+    # Count number of transitions of each kind
+    transition_type, n_transition_type = np.unique(state_pairs, return_counts=True, axis=0)
+    n_transitions_total = np.sum(n_transition_type)
+    
+    # Make transition matrix between hidden states
+    transition_matrix = np.zeros((len(unique_states), len(unique_states)))
+    for (from_state, to_state), count in zip(transition_type, n_transition_type):
+        transition_matrix[to_state, from_state] += count
+    
+    # Normalize transition matrix to be column stochastic
+    transition_matrix /= np.sum(transition_matrix, axis=0)
+    transition_matrix = np.nan_to_num(transition_matrix, nan=0.)
+
+    if observations is None:
+        return transition_matrix, unique_states
+    # If observations is a row vector, make it a true column vector
+    observations = observations.reshape(observations.shape[0], -1)
+
+    # Create emission probability matrix
+    unique_obs = np.unique(observations, axis=0)
+    observation_to_index = {tuple(obs): i for i, obs in enumerate(unique_obs)}
+    obs_indexed = np.array([observation_to_index[tuple(obs)] for i, obs in enumerate(observations)])
+
+    # Count number of observations corresponding to each state
+    state_obs_pairs = np.stack([states_as_int, obs_indexed], axis=1)
+    obs_with_state, n_obs_with_state = np.unique(state_obs_pairs, return_counts=True, axis=0)
+
+    emission_probs = np.zeros((len(unique_obs), len(unique_states)))
+    for (state, obs), count in zip(obs_with_state, n_obs_with_state):
+        emission_probs[obs, state] += count
+    
+    # Normalize emission probability matrix to be column stochastic
+    emission_probs /= np.sum(emission_probs, axis=0)
+    emission_probs = np.nan_to_num(emission_probs, nan=0.)
+
+    return transition_matrix, emission_probs, unique_states, unique_obs
 
 def dataset_to_abc(dataset_abc_text: str, label, reference_number):
     """ 
