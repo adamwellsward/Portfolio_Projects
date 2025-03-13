@@ -16,11 +16,9 @@ ROMAN_NUMERAL_MAP = {
     "I": 1, "#I": 2, "bII": 2, "II": 3, "#II": 4, "bIII": 4, "III": 5, 
     "#III": 6, "bIV": 6, "IV": 6, "#IV": 7, "bV": 7, "V": 8, "#V": 9, 
     "bVI": 9, "VI": 10, "#VI": 11, "bVII": 11, "VII": 12, "bI": 12,
-    "bVI": 9, "VI": 10, "#VI": 11, "bVII": 11, "VII": 12, "bI": 12,
 
     "i": 13, "#i": 14, "bii": 14, "ii": 15, "#ii": 16, "biii": 16, "iii": 17, 
     "#iii": 18, "biv": 18, "iv": 18, "#iv": 19, "bv": 19, "v": 20, "#v": 21, 
-    "bvi": 21, "vi": 22, "#vi": 23, "bvii": 23, "vii": 24, "bi": 24
     "bvi": 21, "vi": 22, "#vi": 23, "bvii": 23, "vii": 24, "bi": 24
 }
 
@@ -171,7 +169,8 @@ def dataframe_to_states(song_df: pd.DataFrame, chords_per_state: int, melody_per
     if melody_per_state > 0:
         melody_states[0, :] = 0  # Start with zeros (rests)
 
-    for i, (_, row) in enumerate(song_df.iterrows()):
+
+    for i, (_, row) in tqdm(enumerate(song_df.iterrows()), total=len(song_df), desc='Processing states'):
         if chords_per_state > 0:
             chord_states[i+1, 0:-1] = chord_states[i, 1:]  # Shift left
             chord_states[i+1, -1] = row['chord']  # Append new chord
@@ -201,6 +200,7 @@ def states_to_transition(states: np.ndarray, observations: np.ndarray = None):
     unique_states = np.unique(states, axis=0)
 
     states_to_index = {tuple(state): i for i, state in enumerate(unique_states)}
+    states_to_index['<UNKNOWN>'] = len(unique_states)
 
     # Represent all states as unique integers
     states_as_int = np.array([states_to_index[tuple(state)] for i, state in enumerate(states)])
@@ -242,7 +242,7 @@ def states_to_transition(states: np.ndarray, observations: np.ndarray = None):
     emission_probs /= np.sum(emission_probs, axis=0)
     emission_probs = np.nan_to_num(emission_probs, nan=0.)
 
-    return transition_matrix, emission_probs, unique_states, unique_obs
+    return transition_matrix, emission_probs, unique_states, unique_obs, states_to_index, observation_to_index
 
 def dataset_to_abc(dataset_abc_text: str, label, reference_number):
     """ 
