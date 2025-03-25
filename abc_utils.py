@@ -322,6 +322,11 @@ def load_datasets(test_ratio=0.3,
     val_len_path = os.path.join(dataset_path, f'val_{val_ratio}_lengths.csv')
     test_len_path = os.path.join(dataset_path, f'test_{test_ratio}_lengths.csv')
 
+    # These are the complementary song_index to og song dataframe
+    train_good_indicies_path = os.path.join(dataset_path, f'train_{train_ratio}_song_indicies.csv')
+    val_good_indicies_path = os.path.join(dataset_path, f'val_{val_ratio}_song_indicies.csv')
+    test_good_indicies_path = os.path.join(dataset_path, f'test_{test_ratio}_song_indicies.csv')
+
     # this is where the bad songs will go 
     train_bad_path = os.path.join(dataset_path, f'train_{train_ratio}_bad_songs.csv')
     val_bad_path = os.path.join(dataset_path, f'val_{val_ratio}_bad_songs.csv')
@@ -350,12 +355,13 @@ def load_datasets(test_ratio=0.3,
         val_slice = np.s_[train_size:train_size+val_size]
         test_slice = np.s_[train_size+val_size:]
 
-        for slice, name, df_path, len_path, bad_path in [(train_slice, "train_set", train_path, train_len_path, train_bad_path), 
-                                  (val_slice, "val_set", val_path, val_len_path, val_bad_path), 
-                                  (test_slice, "test_set", test_path, test_len_path, test_bad_path)]:
+        for slice, name, df_path, len_path, good_index_path, bad_path in [(train_slice, "train_set", train_path, train_len_path, train_good_indicies_path, train_bad_path), 
+                                  (val_slice, "val_set", val_path, val_len_path, val_good_indicies_path, val_bad_path), 
+                                  (test_slice, "test_set", test_path, test_len_path, test_good_indicies_path, test_bad_path)]:
             preprocessed_set = []
             set_lengths = []
             bad_songs = []
+            good_songs = []
 
             print(f'Making {name}')
             for i in tqdm(draw[slice]):
@@ -365,11 +371,11 @@ def load_datasets(test_ratio=0.3,
                     preprocessed_set.append(song_df)
                     set_lengths.append(len(song_df))
                     del song_df
+                    good_songs.append(i)
                 except:
                     print('bad')
                     bad_songs.append(i)
                 
-
             print(f'Saving {name}')
             # save the good song dataset
             df = pd.concat(preprocessed_set)
@@ -379,6 +385,10 @@ def load_datasets(test_ratio=0.3,
             # save the lengths of the good songs
             len_series = pd.Series(set_lengths, name="lengths")
             len_series.to_csv(len_path, index=False)
+
+            # save the indicies of the good songs
+            good_i_series = pd.Series(good_songs, name="song_index")
+            good_i_series.to_csv(good_index_path, index=False)
 
             # save the series of the bad songs
             bad_series = pd.Series(bad_songs, name='song_index')
@@ -390,20 +400,29 @@ def load_datasets(test_ratio=0.3,
     val_df = pd.read_parquet(val_path)
     train_df = pd.read_parquet(train_path)
 
+    # get the lengths
     train_len_series = pd.read_csv(train_len_path)
     val_len_series = pd.read_csv(val_len_path)
     test_len_series = pd.read_csv(test_len_path)
+
+    # get the indicies
+    train_indicies_series = pd.read_csv(train_len_path)
+    val_indicies_series = pd.read_csv(val_len_path)
+    test_indicies_series = pd.read_csv(test_len_path)
 
     list_to_return = []
     if return_train_val:
         list_to_return.append(train_df)
         list_to_return.append(train_len_series)
+        list_to_return.append(train_indicies_series)
         list_to_return.append(val_df)
         list_to_return.append(val_len_series)
+        list_to_return.append(val_indicies_series)
 
     if return_test:
         list_to_return.append(test_df)
         list_to_return.append(test_len_series)
+        list_to_return.append(test_indicies_series)
 
     return list_to_return
 
