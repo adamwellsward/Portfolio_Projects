@@ -162,12 +162,13 @@ def dataframe_to_states(song_df: pd.DataFrame, chords_per_state: int, melody_per
     # Initialize chord and melody states, handling cases where they might be 0
     chord_states = np.empty((n_rows, chords_per_state), dtype=int) if chords_per_state > 0 else np.empty((n_rows, 0), dtype=int)
     melody_states = np.empty((n_rows, melody_per_state + 1), dtype=int) if melody_per_state > 0 else np.empty((n_rows, 0), dtype=int)
-    observations = np.empty(n_rows - 1)
+    observations = np.empty(n_rows)
 
     if chords_per_state > 0:
         chord_states[0, :] = 0  # Start with zeros (rests)
     if melody_per_state > 0:
         melody_states[0, :] = 0  # Start with zeros (rests)
+    observations[0] = 0
 
 
     for i, (_, row) in tqdm(enumerate(song_df.iterrows()), total=len(song_df), desc='Processing states'):
@@ -179,7 +180,7 @@ def dataframe_to_states(song_df: pd.DataFrame, chords_per_state: int, melody_per
             melody_states[i+1, 0:-1] = melody_states[i, 1:]  # Shift left
             melody_states[i+1, -1] = row['melody']  # Append new melody
         
-        observations[i] = row['melody']
+        observations[i+1] = row['melody']
     
     # Don't include the current melody note (melody_states[:, :-1]))
 
