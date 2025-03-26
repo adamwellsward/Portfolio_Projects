@@ -183,7 +183,7 @@ def dataframe_to_states(song_df: pd.DataFrame, chords_per_state: int, melody_per
     
     # Don't include the current melody note (melody_states[:, :-1]))
 
-    return np.hstack([chord_states, melody_states[:, :-1]])[1:], observations
+    return np.hstack([chord_states, melody_states[:, :-1]]), observations
 
 def states_to_transition(states: np.ndarray, observations: np.ndarray = None):
     """ 
