@@ -186,10 +186,42 @@ def dataframe_to_states(song_df: pd.DataFrame, chords_per_state: int, melody_per
 
     return np.hstack([chord_states, melody_states[:, :-1]]), observations
 
-def states_to_transition(states: np.ndarray, observations: np.ndarray = None):
+def redact(seq, lam):
+    """
+    Redact a sequence of chords to only contain lam repetitions of any given chord in the sequence. Takes in a one-dimensional sequence and returns the 
+    shortened sequence
+    """
+    if len(seq.shape) != 1:
+        raise TypeError("array must be 1-dimensional")
+
+    # start building a mask for the sequence: True if we are below lam repetitions, False otherwise
+    curr_val = seq[0]
+    length = 1
+    mask = [True]
+
+    # iterate through and create the mask
+    for i in range(1, len(seq)):
+        if seq[i] == curr_val:
+            if length <= lam - 1:
+                mask.append(True)
+            else:
+                mask.append(False)
+            length += 1
+        else:
+            mask.append(True)
+            curr_val = seq[i]
+            length = 1
+
+    # mask out the values and return
+    mask = np.array(mask)
+    return seq[mask]
+
+
+def states_to_transition(states: np.ndarray, observations: np.ndarray = None, lam: int=2):
     """ 
-    Given a matrix `states` where each row represents a new state, and a vector
-    or matrix `observations` representing the associated observations, return: 
+    Given a matrix `states` where each row represents a new state, a vector
+    or matrix `observations` representing the associated observations, and an integer lam 
+    representing the number of repetitions wanted for the simple 1-chord case, return: 
      - a column-stochastic transition matrix
      - a column-stochastic emission probability matrix
      - a matrix where each row is the hidden state associated with that
@@ -205,8 +237,14 @@ def states_to_transition(states: np.ndarray, observations: np.ndarray = None):
 
     # Represent all states as unique integers
     states_as_int = np.array([states_to_index[tuple(state)] for i, state in enumerate(states)])
-    # Get pairs of consecutive states to prepare to calculate transition probabilities
-    state_pairs = np.stack([states_as_int[:-1], states_as_int[1:]], axis=1)
+
+    # if the states are one-dimensional (only one chord), then perform the slicing action
+    if ((1 in states_as_int.shape or len(states_as_int.shape) == 1) and (lam is not None)):
+        new_states = redact(states_as_int, lam)
+        state_pairs = np.stack([new_states[:-1], new_states[1:]], axis=1)
+    else:
+        # Get pairs of consecutive states to prepare to calculate transition probabilities
+        state_pairs = np.stack([states_as_int[:-1], states_as_int[1:]], axis=1)
     
     # Count number of transitions of each kind
     transition_type, n_transition_type = np.unique(state_pairs, return_counts=True, axis=0)
