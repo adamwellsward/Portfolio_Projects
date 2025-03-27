@@ -11,7 +11,8 @@ from fractions import Fraction
 RANDOM_STATE = 42
 np.random.seed(RANDOM_STATE)
 ROMAN_NUMERAL_MAP = {
-    "-": 0, 
+    "-": -1,
+    "Rest": 0, 
 
     "I": 1, "#I": 2, "bII": 2, "II": 3, "#II": 4, "bIII": 4, "III": 5, 
     "#III": 6, "bIV": 6, "IV": 6, "#IV": 7, "bV": 7, "V": 8, "#V": 9, 
@@ -165,9 +166,9 @@ def dataframe_to_states(song_df: pd.DataFrame, chords_per_state: int, melody_per
     observations = np.empty(n_rows)
 
     if chords_per_state > 0:
-        chord_states[0, :] = 0  # Start with zeros (rests)
+        chord_states[0, :] = -1  # Start with zeros (rests)
     if melody_per_state > 0:
-        melody_states[0, :] = 0  # Start with zeros (rests)
+        melody_states[0, :] = -1  # Start with zeros (rests)
     observations[0] = 0
 
 
