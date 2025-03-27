@@ -217,7 +217,7 @@ def redact(seq, lam):
     return seq[mask]
 
 
-def states_to_transition(states: np.ndarray, observations: np.ndarray = None, lam: int=2):
+def states_to_transition(states: np.ndarray, observations: np.ndarray = None, lam: int=None):
     """ 
     Given a matrix `states` where each row represents a new state, a vector
     or matrix `observations` representing the associated observations, and an integer lam 
