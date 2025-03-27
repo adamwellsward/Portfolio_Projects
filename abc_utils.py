@@ -309,6 +309,24 @@ def load_datasets(test_ratio=0.3,
     the 'abc_to_dataframe' function in `abc_utils.py`. Note the 
     the lines for the 'harmonization' task. Puts the ABC input column into
     standard ABC format, with appropriate newlines.
+
+    Parameters:
+    -------
+    test_ratio (float): The amount of the total original dataset that goes to the test subset
+    val_ratio (float): the amount of the non-test subset (the train set) goes to the validation split
+    return_train_val (bool): return train and val dataframes (see return)
+    return_test (bool): return test dataframes (see return)
+    recreate_dataset (bool): reruns the actual creatation of the dataset split
+    local (bool): used in load_harminization_train_test (only used if recreate_dataset=True)
+
+    Returns:
+    --------
+    list_to_return (list of pd.DataFrames): 
+        If return_train_val=True this returns 
+        (train_df, train_len_series, train_indicies_series, val_df, val_len_series, val_indicies_series)
+        if return_test=True then (test_df, test_len_series, test_indicies_series) 
+        is also appended to the list_to_return
+
     """
     # find the ratio to split the data
     train_ratio = np.round((1-test_ratio) * (1-val_ratio), 2)
@@ -452,6 +470,77 @@ def load_harmonization_train_test(local=True):
         )
         
     return train_set, test_set
+
+class OG_Dataset(object):
+    '''An object for intereacting with the original melodyhub dataset'''
+
+    def __init__(self, 
+                 curated_path: str = "./curated_datasets", 
+                 train_songs_ind: str = "train_0.56_song_indicies.csv",
+                 val_songs_ind: str = "val_0.14_song_indicies.csv",
+                 test_songs_ind: str = "test_0.3_song_indicies.csv"):
+        
+        og_train_df, og_test_df = load_harmonization_train_test(local=True)
+        self.og_full_dataset = pd.concat([og_train_df, og_test_df], ignore_index=True)
+        
+        # These are the paths complementary song_index to og song dataframe
+        train_indicies_path = os.path.join(curated_path, train_songs_ind)
+        val_indicies_path = os.path.join(curated_path, val_songs_ind)
+        test_indicies_path = os.path.join(curated_path, test_songs_ind)
+
+        self.og_train_indicies = pd.read_csv(train_indicies_path)
+        self.og_val_indicies = pd.read_csv(val_indicies_path)
+        self.og_test_indicies = pd.read_csv(test_indicies_path)
+
+    def get_abc_texts_from_df(self, 
+                              train_indicies: list = None, 
+                              val_indicies: list = None, 
+                              test_indicies: list = None):
+        ''' Get subsets of the original train, val or test dataset to access the og abc_texts
+        
+        Parameters:
+        -----------
+        train_indicies (list): A list of indicies (based on the preprocessed 
+                               train dataset) that the user wants to access
+        val_indicies (list): A list of indicies (based on the preprocessed 
+                               val dataset) that the user wants to access
+        test_indicies (list): A list of indicies (based on the preprocessed 
+                               test dataset) that the user wants to access
+
+        Returns:
+        --------
+        (og_train_subset, og_val_subset, og_test_subset): 
+            where og_{train/val/test}_subset is a subset of the original dataframe 
+            that contains the output and input abc texts corresponding to the indicies
+            that were passed
+
+        '''
+
+
+        og_train_subset = None
+        og_val_subset = None
+        og_test_subset = None
+
+
+        if train_indicies is not None:
+            og_train_indicies = self.og_train_indicies.iloc[train_indicies].values.flatten().tolist()
+            og_train_subset = self.og_full_dataset.iloc[og_train_indicies]
+
+        if val_indicies is not None:
+            og_val_indicies = self.og_val_indicies.iloc[val_indicies].values.flatten().tolist()
+            og_val_subset = self.og_full_dataset.iloc[og_val_indicies]
+
+        if test_indicies is not None:
+            og_test_indicies = self.og_test_indicies.iloc[test_indicies].values.flatten().tolist()
+            og_test_subset = self.og_full_dataset.iloc[og_test_indicies]
+
+        return og_train_subset, og_val_subset, og_test_subset
+        
+
+class Curated_Dataset(object):
+    def __init__(self):
+        pass
+
 
 if __name__ == '__main__':
     print(load_datasets())
