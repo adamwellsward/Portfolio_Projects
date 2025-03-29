@@ -95,9 +95,8 @@ def fit_model(train_set: pd.DataFrame, train_lengths: pd.Series, num_chords: int
     starting_state = -np.ones(unique_states.shape[1])
     starting_state_index = states_to_index[tuple(starting_state)]
 
-    #start_probs = np.zeros(transition_matrix.shape[0])
-    #start_probs[starting_state_index] = 1
-    start_probs = np.ones(transition_matrix.shape[0]) / transition_matrix.shape[0]
+    start_probs = np.zeros(transition_matrix.shape[0])
+    start_probs[starting_state_index] = 1
     
     model.startprob_ = start_probs
 
@@ -120,7 +119,7 @@ def predict_states(model: hmm.CategoricalHMM, all_dicts: tuple, observation: np.
     observation_indices = np.array([int(observation_to_index[(o,)]) for o in observation])
 
     # get the predicted state indices
-    _, pred_indices = model.decode(observation_indices.reshape(-1, 1))
+    probability, pred_indices = model.decode(observation_indices.reshape(-1, 1))
 
     # use the unique_states dictionary to take the indices to the actual states
     pred_states = unique_states[pred_indices, :]
@@ -140,14 +139,16 @@ def get_prediction(model, all_dicts, val_set: pd.DataFrame, val_lengths: pd.Seri
     # print the results, then return the results and the accuracy
     if do_print:
         print("Pred\t\tTrue")
-        for i in range(len(pred_states)):
-            print(f"{pred_states[i]}\t\t{true_states[i]}")
+        for p, t in zip(pred_states, true_states):
+            print(p, t)
+        print()
+        print()
 
     # get the accuracy
     accuracy = chord_accuracy(pred_states, true_states, num_chords, num_notes)
     print("Accuracy:", accuracy)
 
-    return pred_states, accuracy
+    return pred_states, true_states, accuracy
 
 
 
@@ -157,18 +158,18 @@ if __name__ == '__main__':
         full_dataset_dir='curated_datasets'
     )
     train_songs, val_songs, _ = og_dataset.get_abc_texts_from_indicies(
-        range(0, 50),
+        range(0, 1000),
         range(0, 3)
     )
 
-    train_len_series = train_len_series.iloc[:50]
+    train_len_series = train_len_series.iloc[:1000]
     val_len_series = train_len_series.iloc[:3]
 
     train_df = pd.concat([abc_to_dataframe(song) for song in tqdm(train_songs['output'], desc='Loading songs')])
     val_df = pd.concat([abc_to_dataframe(song) for song in val_songs['output']])
 
-    n_chords_range = [1]
-    n_melody_range = [0]
+    n_chords_range = [1, 2, 3]
+    n_melody_range = [0, 1, 2, 3]
 
     parameter_range = list(product(n_chords_range, n_melody_range))
     validation_accuracies = []
@@ -178,7 +179,7 @@ if __name__ == '__main__':
         model, all_dicts = fit_model(train_df, train_len_series, n_chords, n_melody)
         # Validate
 
-        pred_states, accuracy = get_prediction(model, all_dicts, val_df, val_len_series, n_chords, n_melody, do_print=False)
+        pred_states, true_states, accuracy = get_prediction(model, all_dicts, val_df, val_len_series, n_chords, n_melody, do_print=True)
         print(f'Accuracy on validation set with {n_chords} chords and {n_melody} melody notes:\t{accuracy}')
         validation_accuracies.append(accuracy)
 

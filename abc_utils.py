@@ -218,7 +218,6 @@ def redact(seq, lam):
     mask = np.array(mask)
     return seq[mask]
 
-
 def states_to_transition(states: np.ndarray, observations: np.ndarray = None, lam: int=None):
     """ 
     Given a matrix `states` where each row represents a new state, a vector
@@ -253,7 +252,7 @@ def states_to_transition(states: np.ndarray, observations: np.ndarray = None, la
     n_transitions_total = np.sum(n_transition_type)
     
     # Make transition matrix between hidden states
-    transition_matrix = np.zeros((len(unique_states), len(unique_states)))
+    transition_matrix = np.ones((len(unique_states), len(unique_states))) # TODO: Add a parameter for this
     for (from_state, to_state), count in zip(transition_type, n_transition_type):
         transition_matrix[to_state, from_state] += count
     
@@ -275,7 +274,7 @@ def states_to_transition(states: np.ndarray, observations: np.ndarray = None, la
     state_obs_pairs = np.stack([states_as_int, obs_indexed], axis=1)
     obs_with_state, n_obs_with_state = np.unique(state_obs_pairs, return_counts=True, axis=0)
 
-    emission_probs = np.zeros((len(unique_obs), len(unique_states)))
+    emission_probs = np.ones((len(unique_obs), len(unique_states))) # TODO: add a parameter for this
     for (state, obs), count in zip(obs_with_state, n_obs_with_state):
         emission_probs[obs, state] += count
     
