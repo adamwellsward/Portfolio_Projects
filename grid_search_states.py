@@ -157,9 +157,12 @@ if __name__ == '__main__':
         full_dataset_dir='curated_datasets'
     )
     train_songs, val_songs, _ = og_dataset.get_abc_texts_from_indicies(
-        range(0, 2000),
-        range(30, 33)
+        range(0, 50),
+        range(0, 3)
     )
+
+    train_len_series = train_len_series.iloc[:50]
+    val_len_series = train_len_series.iloc[:3]
 
     train_df = pd.concat([abc_to_dataframe(song) for song in tqdm(train_songs['output'], desc='Loading songs')])
     val_df = pd.concat([abc_to_dataframe(song) for song in val_songs['output']])
@@ -175,7 +178,7 @@ if __name__ == '__main__':
         model, all_dicts = fit_model(train_df, train_len_series, n_chords, n_melody)
         # Validate
 
-        pred_states, accuracy = get_prediction(model, all_dicts, val_df, val_len_series, n_chords, n_melody, do_print=False, subset=True, indices=range(300, 302))
+        pred_states, accuracy = get_prediction(model, all_dicts, val_df, val_len_series, n_chords, n_melody, do_print=False)
         print(f'Accuracy on validation set with {n_chords} chords and {n_melody} melody notes:\t{accuracy}')
         validation_accuracies.append(accuracy)
 
