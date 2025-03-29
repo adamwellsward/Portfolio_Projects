@@ -512,24 +512,66 @@ class OG_Dataset(object):
     '''An object for intereacting with the original melodyhub dataset'''
 
     def __init__(self, 
-                 curated_path: str = "./curated_datasets", 
-                 train_songs_ind: str = "train_0.56_song_indicies.csv",
-                 val_songs_ind: str = "val_0.14_song_indicies.csv",
-                 test_songs_ind: str = "test_0.3_song_indicies.csv"):
+                 full_dataset_dir: str = "./",
+                 full_dataset_filename: str = "full_dataset_w_key.csv",
+                 curated_datasets_dir: str = "./curated_datasets",
+                 train_songs_ind_filename: str = "train_0.56_song_indicies.csv",
+                 val_songs_ind_filename: str = "val_0.14_song_indicies.csv",
+                 test_songs_ind_filename: str = "test_0.3_song_indicies.csv"):
         
-        og_train_df, og_test_df = load_harmonization_train_test(local=True)
-        self.og_full_dataset = pd.concat([og_train_df, og_test_df], ignore_index=True)
-        
+        # og_train_df, og_test_df = load_harmonization_train_test(local=True)
+        self.og_full_dataset = pd.read_csv(os.path.join(full_dataset_dir, full_dataset_filename), index_col=0)
+
+
         # These are the paths complementary song_index to og song dataframe
-        train_indicies_path = os.path.join(curated_path, train_songs_ind)
-        val_indicies_path = os.path.join(curated_path, val_songs_ind)
-        test_indicies_path = os.path.join(curated_path, test_songs_ind)
+        train_indicies_path = os.path.join(curated_datasets_dir, train_songs_ind_filename)
+        val_indicies_path = os.path.join(curated_datasets_dir, val_songs_ind_filename)
+        test_indicies_path = os.path.join(curated_datasets_dir, test_songs_ind_filename)
 
         self.og_train_indicies = pd.read_csv(train_indicies_path)
         self.og_val_indicies = pd.read_csv(val_indicies_path)
         self.og_test_indicies = pd.read_csv(test_indicies_path)
 
-    def get_abc_texts_from_df(self, 
+        good_song_indicies = pd.concat([self.og_train_indicies,
+                                        self.og_val_indicies,
+                                        self.og_test_indicies])
+        
+        
+
+        self.og_full_dataset = self.og_full_dataset.loc[good_song_indicies.values.flatten().tolist()]
+
+        train_num_of_ind = len(self.og_train_indicies)
+        val_num_of_ind = len(self.og_val_indicies)
+        test_num_of_ind = len(self.og_test_indicies)
+
+        # {for i in range(train_num_of_ind)}
+
+        # self.ind_to_og_ind = {}
+
+
+        # TODO: Add this to load_datasets() when it is already looping over the m21 objects
+        # # helper to get the kseys
+        # def get_key(text: str):
+        #     # get the score
+        #     abc_score = m21.converter.parse(text, format='abc')
+            
+        #     # get the part
+        #     part = abc_score.parts[0]
+
+        #     # flatten the part and iterate through to find the key(s)
+        #     key = None
+        #     for item in part.flatten():
+        #         if isinstance(item, m21.key.Key):
+        #             key = item.__str__()
+        #             break
+                
+        #     if key is None:
+        #         print('HIT this')
+        #     return key
+        
+        # self.og_full_dataset['keys'] = self.og_full_dataset['output'].apply(get_key)
+
+    def get_abc_texts_from_indicies(self, 
                               train_indicies: list = None, 
                               val_indicies: list = None, 
                               test_indicies: list = None):
@@ -552,12 +594,9 @@ class OG_Dataset(object):
             that were passed
 
         '''
-
-
         og_train_subset = None
         og_val_subset = None
         og_test_subset = None
-
 
         if train_indicies is not None:
             og_train_indicies = self.og_train_indicies.iloc[train_indicies].values.flatten().tolist()
@@ -572,11 +611,17 @@ class OG_Dataset(object):
             og_test_subset = self.og_full_dataset.iloc[og_test_indicies]
 
         return og_train_subset, og_val_subset, og_test_subset
+    
+    # def inds_based_on():
+    
         
 
-class Curated_Dataset(object):
-    def __init__(self):
-        pass
+# class Curated_Dataset(object):
+#     def __init__(self, get_test=False):
+#         self.train_df, self.train_lengths, self.train_indicies, self.val_df, self.val_lengths, self.val_indicies, self.val_df, self.val_lengths, self.val_indicies = load_datasets(return_test=get_test)
+    
+#     def
+
 
 
 if __name__ == '__main__':
