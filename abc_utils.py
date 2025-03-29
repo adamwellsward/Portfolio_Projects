@@ -27,7 +27,8 @@ CHORD_INT_MAP = {v: k for k, v in ROMAN_NUMERAL_MAP.items()}
     
 def abc_to_dataframe(abc_text: str, 
                      chords_style='simple_numerals',
-                     include_mode: bool=False):
+                     include_mode: bool=False,
+                     return_key: bool=False):
     if chords_style != 'simple_numerals':
         raise Exception('Other chord styles have not been implemented.')
 
@@ -128,6 +129,8 @@ def abc_to_dataframe(abc_text: str,
         
         
         if isinstance(element, m21.key.Key):
+            if current_key is None:
+                song_key = song_key = element.__str__()
             current_key = element
 
         elif isinstance(element, m21.harmony.ChordSymbol):
@@ -145,7 +148,14 @@ def abc_to_dataframe(abc_text: str,
             element.key = current_key
             current_melody = element
     
-    return pd.DataFrame(states).astype({'melody': int})
+    states_df = pd.DataFrame(states).astype({'melody': int})
+
+    states_df['first_key_in_song'] = song_key
+
+    if return_key:
+        return states_df, song_key
+    else:
+        return states_df
 
 def dataframe_to_states(song_df: pd.DataFrame, chords_per_state: int, melody_per_state: int):
     """
@@ -422,6 +432,9 @@ def load_datasets(test_ratio=0.3,
         val_slice = np.s_[train_size:train_size+val_size]
         test_slice = np.s_[train_size+val_size:]
 
+        all_good_songs = []
+        all_1st_keys = []
+
         for slice, name, df_path, len_path, good_index_path, bad_path in [(train_slice, "train_set", train_path, train_len_path, train_good_indicies_path, train_bad_path), 
                                   (val_slice, "val_set", val_path, val_len_path, val_good_indicies_path, val_bad_path), 
                                   (test_slice, "test_set", test_path, test_len_path, test_good_indicies_path, test_bad_path)]:
@@ -434,11 +447,13 @@ def load_datasets(test_ratio=0.3,
             for i in tqdm(draw[slice]):
                 song = full_set.loc[i]
                 try:
-                    song_df = abc_to_dataframe(song)
+                    song_df, song_key = abc_to_dataframe(song, return_key=True)
+                    all_1st_keys.append(song_key)
                     preprocessed_set.append(song_df)
                     set_lengths.append(len(song_df))
                     del song_df
                     good_songs.append(i)
+                    all_good_songs.append(i)
                 except:
                     print('bad')
                     bad_songs.append(i)
@@ -461,6 +476,11 @@ def load_datasets(test_ratio=0.3,
             bad_series = pd.Series(bad_songs, name='song_index')
             bad_series.to_csv(bad_path, index=False)
 
+        # save the original dataset (excluding the indicies that didn't work)
+        # including the first key in the song as a column
+        full_set = full_set.loc[all_good_songs]
+        full_set['keys'] = all_1st_keys
+        full_set.os.path.join(dataset_path, f'full_dataset_w_key_{train_ratio}.parquet')
 
     # get main dfs
     test_df = pd.read_parquet(test_path)
@@ -522,8 +542,8 @@ class OG_Dataset(object):
     '''An object for intereacting with the original melodyhub dataset'''
 
     def __init__(self, 
-                 full_dataset_dir: str = "./",
-                 full_dataset_filename: str = "full_dataset_w_key.csv",
+                 full_dataset_dir: str = "./curated_datasets",
+                 full_dataset_filename: str = "full_dataset_w_key_0.56.csv",
                  curated_datasets_dir: str = "./curated_datasets",
                  train_songs_ind_filename: str = "train_0.56_song_indicies.csv",
                  val_songs_ind_filename: str = "val_0.14_song_indicies.csv",
