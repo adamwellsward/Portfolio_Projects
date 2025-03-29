@@ -130,7 +130,7 @@ def abc_to_dataframe(abc_text: str,
         
         if isinstance(element, m21.key.Key):
             if current_key is None:
-                song_key = song_key = element.__str__()
+                song_key = element.__str__()
             current_key = element
 
         elif isinstance(element, m21.harmony.ChordSymbol):
