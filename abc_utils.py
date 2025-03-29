@@ -70,7 +70,8 @@ def abc_to_dataframe(abc_text: str,
                     mode_shift = 9 # Shift up to avoid negative values (rest is 0)
                 else:
                     raise Exception(f'Mode is {mode}. Not major or minor')
-            key_shift = (key.tonic.midi % 12) + mode_shift
+            key_shift = 12 - (key.tonic.midi % 12) + mode_shift
+            
             melody_repr = melody.pitch.midi + key_shift + 1 # Add 1 to make room so that 0 can represent a rest
         else:
             raise Exception('Melody should be a rest or a note')
@@ -281,6 +282,15 @@ def states_to_transition(states: np.ndarray, observations: np.ndarray = None, la
     # Normalize emission probability matrix to be column stochastic
     emission_probs /= np.sum(emission_probs, axis=0)
     emission_probs = np.nan_to_num(emission_probs, nan=0.)
+
+    # TODO: bandaid fix
+    states_with_no_transition = np.where(np.sum(transition_matrix, axis=0) == 0)[0]
+
+    if states_with_no_transition.size > 0:
+        transition_to_beginning = np.zeros((transition_matrix.shape[0], 1))  # Reshape to column vector
+        transition_to_beginning[0, 0] = 1
+        transition_matrix[:, states_with_no_transition] = transition_to_beginning
+
 
     return transition_matrix, emission_probs, unique_states, unique_obs, states_to_index, observation_to_index
 
@@ -601,15 +611,15 @@ class OG_Dataset(object):
 
         if train_indicies is not None:
             og_train_indicies = self.og_train_indicies.iloc[train_indicies].values.flatten().tolist()
-            og_train_subset = self.og_full_dataset.iloc[og_train_indicies]
+            og_train_subset = self.og_full_dataset.loc[og_train_indicies]
 
         if val_indicies is not None:
             og_val_indicies = self.og_val_indicies.iloc[val_indicies].values.flatten().tolist()
-            og_val_subset = self.og_full_dataset.iloc[og_val_indicies]
+            og_val_subset = self.og_full_dataset.loc[og_val_indicies]
 
         if test_indicies is not None:
             og_test_indicies = self.og_test_indicies.iloc[test_indicies].values.flatten().tolist()
-            og_test_subset = self.og_full_dataset.iloc[og_test_indicies]
+            og_test_subset = self.og_full_dataset.loc[og_test_indicies]
 
         return og_train_subset, og_val_subset, og_test_subset
     
