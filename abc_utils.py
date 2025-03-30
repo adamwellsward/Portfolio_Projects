@@ -228,7 +228,7 @@ def redact(seq, lam):
     mask = np.array(mask)
     return seq[mask]
 
-def states_to_transition(states: np.ndarray, observations: np.ndarray = None, lam: int=None, trans_prior=0.1, emissions_prior=0.1):
+def states_to_transition(states: np.ndarray, observations: np.ndarray = None, lam: int=None, trans_prior: float=0.1, emissions_prior: float=0.1):
     """ 
     Given a matrix `states` where each row represents a new state, a vector
     or matrix `observations` representing the associated observations, and an integer lam 
