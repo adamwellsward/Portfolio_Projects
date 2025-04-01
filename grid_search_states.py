@@ -10,6 +10,7 @@ from itertools import product
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 from tqdm import auto
+from itertools import product
 
 def load_song_subset(train_set, train_lengths, indices):
     """
@@ -168,42 +169,47 @@ def get_prediction(model, all_dicts, val_set: pd.DataFrame, val_lengths: pd.Seri
 
 if __name__ == '__main__':
     train_df, train_len_series, train_indicies_series, val_df, val_len_series, val_indicies_series = load_datasets()
-    og_dataset = OG_Dataset(
-        full_dataset_dir='curated_datasets'
-    )
-    train_songs, val_songs, _ = og_dataset.get_abc_texts_from_indicies(
-        range(0, 1000),
-        range(0, 3)
-    )
+    # og_dataset = OG_Dataset(
+    #     full_dataset_dir='curated_datasets'
+    # )
 
-    train_len_series = train_len_series.iloc[:1000]
-    val_len_series = train_len_series.iloc[:3]
+    # train_songs, val_songs, _ = og_dataset.get_abc_texts_from_indicies(
+    #     range(0, 1000),
+    #     range(0, 3)
+    # )
 
-    train_df = pd.concat([abc_to_dataframe(song) for song in tqdm(train_songs['output'], desc='Loading songs')])
-    val_df = pd.concat([abc_to_dataframe(song) for song in val_songs['output']])
+    # train_len_series = train_len_series.iloc[:1000]
+    # val_len_series = train_len_series.iloc[:3]
+
+    # train_df = pd.concat([abc_to_dataframe(song) for song in tqdm(train_songs['output'], desc='Loading songs')])
+    # val_df = pd.concat([abc_to_dataframe(song) for song in val_songs['output']])
 
     n_chords_range = [1, 2, 3]
     n_melody_range = [0, 1, 2, 3]
+    transmat_prior = [0, .1, .5, 1, 10]
+    emission_prior = [0, .1, .5, 1, 10]
 
     parameter_range = list(product(n_chords_range, n_melody_range))
     validation_accuracies = []
 
-    for n_chords, n_melody in tqdm(parameter_range, desc='Grid-searching over possible state configurations'):
-        # Fit a model with these parameters
-        model, all_dicts = fit_model(train_df, train_len_series, n_chords, n_melody)
-        # Validate
+    for t_prior, e_prior in list(product(transmat_prior, emission_prior)):
+        print(f"Transmission Prior: {t_prior}", f"Emission Prior: {e_prior}")
+        for n_chords, n_melody in tqdm(parameter_range, desc='Grid-searching over possible state configurations'):
+            # Fit a model with these parameters
+            model, all_dicts = fit_model(train_df, train_len_series, n_chords, n_melody, trans_prior=t_prior, emissions_prior=e_prior)
+            # Validate
 
-        pred_states, true_states, accuracy = get_prediction(model, all_dicts, val_df, val_len_series, n_chords, n_melody, do_print=True)
-        print(f'Accuracy on validation set with {n_chords} chords and {n_melody} melody notes:\t{accuracy}')
-        validation_accuracies.append(accuracy)
+            pred_states, true_states, accuracy = get_prediction(model, all_dicts, val_df, val_len_series, n_chords, n_melody, do_print=False)
+            print(f'Accuracy on validation set with {n_chords} chords and {n_melody} melody notes:\t{accuracy}')
+            validation_accuracies.append(accuracy)
 
-    val_accuracy_matrix = np.array(validation_accuracies).reshape(len(n_chords_range), len(n_melody_range))
-    plt.imshow(val_accuracy_matrix)
+        val_accuracy_matrix = np.array(validation_accuracies).reshape(len(n_chords_range), len(n_melody_range))
+        plt.imshow(val_accuracy_matrix)
 
-    plt.xticks(ticks=np.arange(len(n_melody_range)), labels=n_melody_range)
-    plt.yticks(ticks=np.arange(len(n_chords_range)), labels=n_chords_range)
-    plt.xlabel('Number of chords')
-    plt.ylabel('Number of melody notes')
-    plt.colorbar(label='Accuracy')
+        plt.xticks(ticks=np.arange(len(n_melody_range)), labels=n_melody_range)
+        plt.yticks(ticks=np.arange(len(n_chords_range)), labels=n_chords_range)
+        plt.xlabel('Number of chords')
+        plt.ylabel('Number of melody notes')
+        plt.colorbar(label='Accuracy')
 
-    plt.savefig('gridsearch_results.png')
+        plt.savefig(f'gridsearch_results_t_prior_{t_prior}_e_prior_{e_prior}.png')
