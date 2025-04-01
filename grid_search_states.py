@@ -64,7 +64,7 @@ def chord_accuracy(full_pred: np.array, true_states: np.array, num_chords: int=N
 
     return chord_acc
 
-def fit_model(train_set: pd.DataFrame, train_lengths: pd.Series, num_chords: int=1, num_notes: int=0, subset: bool=False, indices=None, lam: int=None):    
+def fit_model(train_set: pd.DataFrame, train_lengths: pd.Series, num_chords: int=1, num_notes: int=0, subset: bool=False, indices=None, lam: int=None, trans_prior: float=0.1, emissions_prior: float=0.1):    
     """ 
     Takes in the train set and parameters for the state space and returns the trained model, along with all of the dictionaries needed to decode the model as a tuple.
 
@@ -81,7 +81,7 @@ def fit_model(train_set: pd.DataFrame, train_lengths: pd.Series, num_chords: int
     true_states, true_observations = dataframe_to_states(train_set, num_chords, num_notes)
     
     # create the transition matrices for the model
-    transition_matrix, emission_probs, unique_states, unique_obs, states_to_index, observation_to_index = states_to_transition(true_states, true_observations, lam)
+    transition_matrix, emission_probs, unique_states, unique_obs, states_to_index, observation_to_index = states_to_transition(true_states, true_observations, lam, trans_prior, emissions_prior)
 
     # now initialize the model and set the matrices for it
     model = hmm.CategoricalHMM(n_components=transition_matrix.shape[0], init_params='')
