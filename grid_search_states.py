@@ -169,47 +169,39 @@ def get_prediction(model, all_dicts, val_set: pd.DataFrame, val_lengths: pd.Seri
 
 if __name__ == '__main__':
     train_df, train_len_series, train_indicies_series, val_df, val_len_series, val_indicies_series = load_datasets()
-    # og_dataset = OG_Dataset(
-    #     full_dataset_dir='curated_datasets'
-    # )
 
-    # train_songs, val_songs, _ = og_dataset.get_abc_texts_from_indicies(
-    #     range(0, 1000),
-    #     range(0, 3)
-    # )
-
-    # train_len_series = train_len_series.iloc[:1000]
-    # val_len_series = train_len_series.iloc[:3]
-
-    # train_df = pd.concat([abc_to_dataframe(song) for song in tqdm(train_songs['output'], desc='Loading songs')])
-    # val_df = pd.concat([abc_to_dataframe(song) for song in val_songs['output']])
-
-    n_chords_range = [1, 2, 3]
-    n_melody_range = [0, 1, 2, 3]
-    transmat_prior = [0, .1, .5, 1, 10]
-    emission_prior = [0, .1, .5, 1, 10]
+    n_chords_range = [1, 2]
+    n_melody_range = [0, 1]
+    transmat_prior = [5, 20, 50, 200]
+    emission_prior = [5, 20, 50, 200]
 
     parameter_range = list(product(n_chords_range, n_melody_range))
-    validation_accuracies = []
 
-    for t_prior, e_prior in list(product(transmat_prior, emission_prior)):
-        print(f"Transmission Prior: {t_prior}", f"Emission Prior: {e_prior}")
-        for n_chords, n_melody in tqdm(parameter_range, desc='Grid-searching over possible state configurations'):
+    validation_accuracy_sets = []
+
+    for n_chords, n_melody in tqdm(parameter_range, desc='Grid-searching over possible state configurations'):
+        validation_accuracies = []
+        plt.figure()
+        print(f"Number of Chords: {n_chords}", f"Number of Melody Notes: {n_melody}")
+        
+        for t_prior, e_prior in product(transmat_prior, emission_prior):
             # Fit a model with these parameters
             model, all_dicts = fit_model(train_df, train_len_series, n_chords, n_melody, trans_prior=t_prior, emissions_prior=e_prior)
             # Validate
-
             pred_states, true_states, accuracy = get_prediction(model, all_dicts, val_df, val_len_series, n_chords, n_melody, do_print=False)
-            print(f'Accuracy on validation set with {n_chords} chords and {n_melody} melody notes:\t{accuracy}')
+            print(f'Accuracy with T={t_prior}, E={e_prior}:	{accuracy}')
             validation_accuracies.append(accuracy)
+        
+        val_accuracy_matrix = np.array(validation_accuracies).reshape(len(transmat_prior), len(emission_prior))
+        plt.imshow(val_accuracy_matrix, aspect='auto')
 
-        val_accuracy_matrix = np.array(validation_accuracies).reshape(len(n_chords_range), len(n_melody_range))
-        plt.imshow(val_accuracy_matrix)
-
-        plt.xticks(ticks=np.arange(len(n_melody_range)), labels=n_melody_range)
-        plt.yticks(ticks=np.arange(len(n_chords_range)), labels=n_chords_range)
-        plt.xlabel('Number of chords')
-        plt.ylabel('Number of melody notes')
+        plt.xticks(ticks=np.arange(len(emission_prior)), labels=emission_prior)
+        plt.yticks(ticks=np.arange(len(transmat_prior)), labels=transmat_prior)
+        plt.xlabel('Emission Prior')
+        plt.ylabel('Transition Prior')
         plt.colorbar(label='Accuracy')
 
-        plt.savefig(f'gridsearch_results_t_prior_{t_prior}_e_prior_{e_prior}.png')
+        plt.savefig(f'plots/gridsearch_results_n_chords_{n_chords}_n_melody_{n_melody}.png')
+
+        validation_accuracy_sets.append(validation_accuracies)
+        # TODO: put into dataframe: trans prior, emission prior, num chords, num melody
