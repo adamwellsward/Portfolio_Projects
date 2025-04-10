@@ -1,0 +1,12 @@
+- Explain why we used viterbi more
+- Explain ABC more, compare to midi and other formats
+- We didn't explain train-test to find accuracy
+- Be clear about what out-of-class method we're using
+- More in conclusion about which of our solutions was best
+- Mention in ethics that this could be used to take away artists' jobs if it were good enough
+- Visuals are good but text is too small
+- Clarify what the task is exactly, who else has done it
+- Why we made preprocessing choices we did
+- Mention that the matrix gets sparse if the k value is larger than 2 or 3
+- Grammatical issues in 4.1.2
+- Part C of figure 1 unnecessary?
