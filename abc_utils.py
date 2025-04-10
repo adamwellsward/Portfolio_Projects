@@ -552,6 +552,7 @@ class OG_Dataset(object):
         
         # og_train_df, og_test_df = load_harmonization_train_test(local=True)
         self.og_full_dataset = pd.read_parquet(os.path.join(full_dataset_dir, full_dataset_filename))
+        self.og_full_dataset = self.og_full_dataset.convert_dtypes()
 
 
         # These are the paths complementary song_index to og song dataframe

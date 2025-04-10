@@ -1,13 +1,3 @@
-curated_datasets/train_0.56_bad_songs.csv
-curated_datasets/train_0.56_lengths.csv
-curated_datasets/train_0.56.parquet
-curated_datasets/val_0.14_bad_songs.csv
-curated_datasets/val_0.14_lengths.csv
-curated_datasets/val_0.14.parquet
-curated_datasets/test_0.3_bad_songs.csv
-curated_datasets/test_0.3.parquet
-curated_datasets/test_0.3_lengths.csv
-.gitignore
 temp*
 seqlearn*
 py_*
