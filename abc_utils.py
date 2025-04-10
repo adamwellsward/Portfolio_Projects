@@ -538,7 +538,6 @@ def load_harmonization_train_test(local=True):
         )
         
     return train_set, test_set
-
 class OG_Dataset(object):
     '''An object for intereacting with the original melodyhub dataset'''
 
@@ -550,7 +549,6 @@ class OG_Dataset(object):
                  val_songs_ind_filename: str = "val_0.14_song_indicies.csv",
                  test_songs_ind_filename: str = "test_0.3_song_indicies.csv"):
         
-        # og_train_df, og_test_df = load_harmonization_train_test(local=True)
         self.og_full_dataset = pd.read_parquet(os.path.join(full_dataset_dir, full_dataset_filename))
         self.og_full_dataset = self.og_full_dataset.convert_dtypes()
 
@@ -567,46 +565,19 @@ class OG_Dataset(object):
         good_song_indicies = pd.concat([self.og_train_indicies,
                                         self.og_val_indicies,
                                         self.og_test_indicies])
-        
-        
 
         self.og_full_dataset = self.og_full_dataset.loc[good_song_indicies.values.flatten().tolist()]
 
-        train_num_of_ind = len(self.og_train_indicies)
-        val_num_of_ind = len(self.og_val_indicies)
-        test_num_of_ind = len(self.og_test_indicies)
+        # add split type to og_full_dataset
+        self.og_full_dataset['split_type'] = None
+        self.og_full_dataset.loc[self.og_train_indicies.values.flatten().tolist(), 'split_type'] = 'train'
+        self.og_full_dataset.loc[self.og_val_indicies.values.flatten().tolist(), 'split_type'] = 'val'
+        self.og_full_dataset.loc[self.og_test_indicies.values.flatten().tolist(), 'split_type'] = 'test'
 
-        # {for i in range(train_num_of_ind)}
+        self.cur_to_og_indicies = {split_type:{cur_ind:og_indicies.iloc[cur_ind].item() for cur_ind in range(len(og_indicies))} for split_type, og_indicies in [('train', self.og_train_indicies), ('val', self.og_val_indicies), ('test', self.og_test_indicies)]}
+        self.og_to_cur_indicies = {split_type:{og_ind:cur_ind for cur_ind, og_ind in ind_dict.items()} for split_type, ind_dict in self.cur_to_og_indicies.items()}
 
-        # self.ind_to_og_ind = {}
-
-
-        # TODO: Add this to load_datasets() when it is already looping over the m21 objects
-        # # helper to get the kseys
-        # def get_key(text: str):
-        #     # get the score
-        #     abc_score = m21.converter.parse(text, format='abc')
-            
-        #     # get the part
-        #     part = abc_score.parts[0]
-
-        #     # flatten the part and iterate through to find the key(s)
-        #     key = None
-        #     for item in part.flatten():
-        #         if isinstance(item, m21.key.Key):
-        #             key = item.__str__()
-        #             break
-                
-        #     if key is None:
-        #         print('HIT this')
-        #     return key
-        
-        # self.og_full_dataset['keys'] = self.og_full_dataset['output'].apply(get_key)
-
-    def get_abc_texts_from_indicies(self, 
-                              train_indicies: list = None, 
-                              val_indicies: list = None, 
-                              test_indicies: list = None):
+    def get_og_rows_from_cur_indicies(self, cur_indicies: list = None, split_type='train'):
         ''' Get subsets of the original train, val or test dataset to access the og abc_texts
         
         Parameters:
@@ -626,34 +597,63 @@ class OG_Dataset(object):
             that were passed
 
         '''
-        og_train_subset = None
-        og_val_subset = None
-        og_test_subset = None
+        og_indicies = [self.cur_to_og_indicies[split_type][i] for i in cur_indicies]
+        og_subset = self.og_full_dataset.loc[og_indicies]
 
-        if train_indicies is not None:
-            og_train_indicies = self.og_train_indicies.iloc[train_indicies].values.flatten().tolist()
-            og_train_subset = self.og_full_dataset.loc[og_train_indicies]
-
-        if val_indicies is not None:
-            og_val_indicies = self.og_val_indicies.iloc[val_indicies].values.flatten().tolist()
-            og_val_subset = self.og_full_dataset.loc[og_val_indicies]
-
-        if test_indicies is not None:
-            og_test_indicies = self.og_test_indicies.iloc[test_indicies].values.flatten().tolist()
-            og_test_subset = self.og_full_dataset.loc[og_test_indicies]
-
-        return og_train_subset, og_val_subset, og_test_subset
+        return og_subset
     
-    # def inds_based_on():
+    def load_song_subset(self, states_df, song_lengths, song_indices):
+        """
+        Create a subset of the train"""
+        end_positions = np.cumsum(song_lengths)
+        positions = np.insert(end_positions, 0, np.array([0]))
+        songs = []
+        for i in song_indices:
+            song = states_df.iloc[positions[i] : positions[i+1]]
+            songs.append(song)
+
+        # return songs and lengths
+        return pd.concat(songs), song_lengths.iloc[song_indices]
     
+    def filter_df(self,
+              states_df: pd.DataFrame, 
+              song_lengths: pd.Series, 
+              col_to_filter: str='keys',
+              filter_str: str = 'major',
+              regex: bool = True,
+              split_type: str = 'train'):
+        """
+        Filters the current_datasets (or preprocessed datasets) using information
+        from the original full dataset. For instance if you want to get the songs 
+        in major keys it will return a subset of states_df containing only the
+        major keys.
+
+        Params:
+        --------
+        states_df (pd.DataFrame): This is a dataframe containing the states such
+                                  as train_df from load_datasets()
+        song_lengths (pd.Series): This is a series containing the lengths of the
+                                  songs contained in the train_df from 
+                                  load_datasets() (such as train_lengths)
+        col_to_filter (str): The column from og_dataset that you want to filter 
+                             on.
+        filter_str (str): The string you filter by in the column specified by
+                          col_to_filter.
+        regex (bool): This turns regex on or off that is used in the
+                       df.str.contains("string", regex=regex)
+        split_type (str): this specifies which split of the data that is being
+                          used i.e. train/val/test
+
+        Return:
+        ------
+        (subset_states_df, subset_song_lengths) subset_states_df is the filtered 
+        song dataframe and the subset_song_lengths is the lengths of the songs in
+        the subset_states_df        
+        """
+        og_indicies = self.og_full_dataset.loc[self.og_full_dataset[col_to_filter].str.contains(filter_str, regex) & (self.og_full_dataset['split_type']==split_type)].index
+        cur_indicies = [self.og_to_cur_indicies[split_type][og_ind] for og_ind in og_indicies]
         
-
-# class Curated_Dataset(object):
-#     def __init__(self, get_test=False):
-#         self.train_df, self.train_lengths, self.train_indicies, self.val_df, self.val_lengths, self.val_indicies, self.val_df, self.val_lengths, self.val_indicies = load_datasets(return_test=get_test)
-    
-#     def
-
+        return self.load_song_subset(states_df, song_lengths, cur_indicies)
 
 
 if __name__ == '__main__':
