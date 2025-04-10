@@ -420,7 +420,8 @@ def load_datasets(test_ratio=0.3,
         print("Loading Harmonization train and test songs")
         # Load old_train and val set from melody hub or local
         old_train_set, old_val_set = load_harmonization_train_test(local=local)
-        full_set = pd.concat([old_train_set, old_val_set], ignore_index=True)['output']
+        full_set = pd.concat([old_train_set, old_val_set], ignore_index=True)
+        # print(type(full_set))
         len_of_full_set = len(full_set)
         draw = np.arange(len_of_full_set)
 
@@ -445,7 +446,7 @@ def load_datasets(test_ratio=0.3,
 
             print(f'Making {name}')
             for i in tqdm(draw[slice]):
-                song = full_set.loc[i]
+                song = full_set['output'].loc[i]
                 try:
                     song_df, song_key = abc_to_dataframe(song, return_key=True)
                     all_1st_keys.append(song_key)
@@ -480,7 +481,7 @@ def load_datasets(test_ratio=0.3,
         # including the first key in the song as a column
         full_set = full_set.loc[all_good_songs]
         full_set['keys'] = all_1st_keys
-        full_set.os.path.join(dataset_path, f'full_dataset_w_key_{train_ratio}.parquet')
+        full_set.to_parquet(os.path.join(dataset_path, f'full_dataset_w_key_{train_ratio}.parquet'))
 
     # get main dfs
     test_df = pd.read_parquet(test_path)
@@ -543,14 +544,14 @@ class OG_Dataset(object):
 
     def __init__(self, 
                  full_dataset_dir: str = "./curated_datasets",
-                 full_dataset_filename: str = "full_dataset_w_key_0.56.csv",
+                 full_dataset_filename: str = "full_dataset_w_key_0.56.parquet",
                  curated_datasets_dir: str = "./curated_datasets",
                  train_songs_ind_filename: str = "train_0.56_song_indicies.csv",
                  val_songs_ind_filename: str = "val_0.14_song_indicies.csv",
                  test_songs_ind_filename: str = "test_0.3_song_indicies.csv"):
         
         # og_train_df, og_test_df = load_harmonization_train_test(local=True)
-        self.og_full_dataset = pd.read_csv(os.path.join(full_dataset_dir, full_dataset_filename), index_col=0)
+        self.og_full_dataset = pd.read_parquet(os.path.join(full_dataset_dir, full_dataset_filename))
 
 
         # These are the paths complementary song_index to og song dataframe
