@@ -1,5 +1,5 @@
-- Explain why we used viterbi more
-- Explain ABC more, compare to midi and other formats
+- [x] Explain why we used viterbi more
+- [x] Explain ABC more, compare to midi and other formats
 - We didn't explain train-test to find accuracy
 - Be clear about what out-of-class method we're using
 - More in conclusion about which of our solutions was best
