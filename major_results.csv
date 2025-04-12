@@ -1,0 +1,11 @@
+lambda,val_data_key,single_key_model_acc,all_key_model_acc
+None,"major",0.1136,0.2467
+None,"all",0.1122,0.2430
+4,"major",0.2443,0.3437
+4,"all",0.2517,0.3451
+3,"major",0.2681,0.3631
+3,"all",0.2782,0.3660
+2,"major",0.2933,0.3763
+2,"all",0.3041,0.3815
+1,"major",0.2442,0.2709
+1,"all",0.2476,0.2732
