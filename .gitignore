@@ -10025,3 +10025,15 @@ grid_search_scripts/2 0 160.0 300.0 The Session phrygian False False.sh
 grid_search_scripts/2 0 160.0 300.0 The Session phrygian False True.sh
 grid_search_scripts/2 0 160.0 300.0 The Session phrygian True False.sh
 grid_search_scripts/2 0 160.0 300.0 The Session phrygian True True.sh
+old_curated_datasets/test_0.3_bad_songs.csv
+old_curated_datasets/test_0.3_lengths.csv
+old_curated_datasets/test_0.3_song_indicies.csv
+old_curated_datasets/test_0.3.parquet
+old_curated_datasets/train_0.56_bad_songs.csv
+old_curated_datasets/train_0.56_lengths.csv
+old_curated_datasets/train_0.56_song_indicies.csv
+old_curated_datasets/train_0.56.parquet
+old_curated_datasets/val_0.14_bad_songs.csv
+old_curated_datasets/val_0.14_lengths.csv
+old_curated_datasets/val_0.14_song_indicies.csv
+old_curated_datasets/val_0.14.parquet

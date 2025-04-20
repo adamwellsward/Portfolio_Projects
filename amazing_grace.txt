@@ -1,0 +1,9 @@
+X: 1
+T: Amazing Grace
+M: 3/4
+L: 1/4
+K: F
+V: Melody
+C|"F" F2 A/2F/2|A2 "C7" G | "Dm" F2 "Bb" D | "C" C2 C | 
+"F" F2 A/2F/2| "Dm" A2 G | "Csus4" c3- | "C" c2 A | "F" c3/2 A/2 c/2A/2 |
+"Dm" F2 "F/C" C | "Bb" D3/2 F/2 F/2D/2 | "F" C2 "C7" C | "Dm" F2 A/2F/2 | "Gm" A2 "C7" G | "F" F3- | F2 |
