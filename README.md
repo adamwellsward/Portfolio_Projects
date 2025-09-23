@@ -18,4 +18,4 @@ package to discover insights into different characters' dialogue patterns.
   
 **PROJECT EULER:**
 
-  Includes over 20 solutions (and counting!) to basic Project Euler coding problems. My side gig.
+  Includes over 25 solutions (and counting!) to basic Project Euler coding problems. My side gig.
