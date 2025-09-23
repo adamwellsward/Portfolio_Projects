@@ -3,10 +3,16 @@
 This repository holds my personal coding endeavors, coding competition files, and other related projects. 
 Each folder contains one of my most recent projects, detailed below:
 
+**AUTO-HARMONIZER**
+The dataset we are using, "melodyhub", is located on [HuggingFace](https://huggingface.co/datasets/sander-wood/melodyhub). We only use the items labeled with "harmonization" task. See `abc_utils.py` for useful scripts to seamlessly load and work with this data.
+
+Necessary packages:
+- [music21](https://www.music21.org/music21docs/)
+
 **AVATAR:**
 
   An NLP approach to analyzing my favorite TV series of all time, Avatar: The Last Airbender. Sentiment analysis was performed using the Hugging Face 'transformers' 
-package to discover insights into different characters' dialogue patterns.
+  package to discover insights into different characters' dialogue patterns.
 
 **CAR ACCIDENT SEVERITY:**
 
