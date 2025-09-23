@@ -658,21 +658,3 @@ class OG_Dataset(object):
 
 if __name__ == '__main__':
     print(load_datasets())
-
-    # train_set, _ = load_harmonization_train_test()
-    # bad_songs = []
-    # for i, row in tqdm(list(train_set.iterrows())):
-    #     try:
-    #         abc_to_dataframe(row['output'])
-    #     except:
-    #         bad_songs.append(row)
-    #         print(row['output'])
-
-    # df = abc_to_dataframe(train_set.iloc[12]['output'])
-    # with open('bad_songs.txt', 'a') as file:
-    #     file.write(str([song.index for song in bad_songs]))
-    #     for song in bad_songs:
-    #         file.write(song['output'])
-
-    # print(dataframe_to_states(df, 3, 2))
-    # print()
