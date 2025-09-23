@@ -1,5 +1,0 @@
-Dataset,Metric,o3,o4-mini,o1
-SimpleQA,accuracy,.49,.2,.47
-SimpleQA,hallucination_rate,.51,.79,.44
-PersonQA,accuracy,.59,.36,.47
-PersonQA,hallucination_rate,.33,.48,.16
