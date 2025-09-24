@@ -1,0 +1,3 @@
+[submodule "moonlander_optimal_control"]
+	path = moonlander_optimal_control
+	url = git@github.com:adamwellsward/moonlander_optimal_control.git
