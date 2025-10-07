@@ -29,4 +29,4 @@ Each folder contains one of my most recent projects, as detailed below:
   
 **PROJECT EULER:**
 
-  Includes over 25 solutions (and counting!) to basic Project Euler coding problems. My side gig.
+  Includes over 35 solutions (and counting!) to basic Project Euler coding problems. My side gig.
