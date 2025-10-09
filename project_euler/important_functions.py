@@ -27,8 +27,10 @@ def primes_up_to(N):
 
 def is_prime(x):
     """Checks if any number is prime."""
-    if x % 2 == 0 or x <= 1:
-        return False        # even numbers, 1, 0, and negative numbers are not prime
+    if (x % 2 == 0 and x != 2) or x <= 1:
+        return False        # even numbers (except 2), 1, 0, and negative numbers are not prime
+    elif x == 2:
+        return True
     else:
         sqrt_x = int(np.sqrt(x)) + 1
         for i in range(3, sqrt_x, 2):
