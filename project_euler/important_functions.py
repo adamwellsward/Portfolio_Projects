@@ -5,6 +5,7 @@ Functions I have written that come up frequently in Project Euler problems.
 Adam Ward
 """
 import numpy as np
+from itertools import permutations
 
 def primes_up_to(N):
     """Compute the primes up to N."""
@@ -66,3 +67,8 @@ def largest_prime_factor(n):
         if n % p == 0:                  # get the factors of n
             factors.append(p)
     return factors, factors[-1] if len(factors) > 0 else None        # return the largest one
+
+def n_pandigitals(n):
+    """Return an array of the n-digit pandigital numbers."""
+    numbers = "".join(str(d) for d in range(1, n+1))
+    return np.array([int("".join(num)) for num in permutations(numbers)])
