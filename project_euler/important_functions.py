@@ -72,3 +72,13 @@ def n_pandigitals(n):
     """Return an array of the n-digit pandigital numbers."""
     numbers = "".join(str(d) for d in range(1, n+1))
     return np.array([int("".join(num)) for num in permutations(numbers)])
+
+def import_data(filename):
+    """
+    Given a filename for a .txt file downloaded from Project Euler, 
+    read in the file and return an array with all of the elements of the file.
+    """
+    with open(filename) as f:
+        full_string = f.readline()
+    data = np.array(full_string.replace('"', '').rsplit(sep=','), dtype=str)
+    return data
