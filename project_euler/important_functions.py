@@ -73,6 +73,12 @@ def n_pandigitals(n):
     numbers = "".join(str(d) for d in range(1, n+1))
     return np.array([int("".join(num)) for num in permutations(numbers)])
 
+def n_pandigit_w_zero(n):
+    """Return an array of the n-digit pandigital numbers (INCLUDING 0)."""
+    numbers = "".join(str(d) for d in range(n+1))
+    perms = np.array([int("".join(num)) for num in permutations(numbers)])
+    return perms[np.array([True if len(str(num)) == n+1 else False for num in perms])]
+
 def import_data(filename):
     """
     Given a filename for a .txt file downloaded from Project Euler, 
