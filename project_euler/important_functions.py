@@ -88,3 +88,26 @@ def import_data(filename):
         full_string = f.readline()
     data = np.array(full_string.replace('"', '').rsplit(sep=','), dtype=str)
     return data
+
+def is_triangular(x):
+    """If x is triangular, return True. Else return False."""
+    if (-1 + (1 + 8*x)**.5) % 2 == 0:
+        return True
+    else:
+        return False
+    
+def is_pentagonal(x):
+    """If x is pentagonal, return True. Else return False."""
+    if (1 + (1 + 24*x)**.5) % 6 == 0:
+        return True
+    else:
+        return False
+    
+def is_hexagonal(x):
+    """If x is hexagonal, return True. Else return False."""
+    if (1 + (1 + 8*x)**.5) % 4 == 0:
+        return True
+    else:
+        return False
+    
+    
