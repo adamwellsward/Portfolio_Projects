@@ -58,15 +58,27 @@ def primes_fast(N):
     return primes_list
 
 def largest_prime_factor(n):
-    """ My second attempt that worked. 
-    This approach has been scaled to work for any number
+    """
+    Return the largest prime factors of a number.
+    (This approach has been scaled to work for any number)
+    """
+    factors = []
+    all_primes = primes_fast(int(np.sqrt(n)+1))                     # compute the list of primes
+    for p in all_primes:
+        if n % p == 0:                                              # get the factors of n
+            factors.append(p)
+    return factors, factors[-1] if len(factors) > 0 else None       # return the largest one
+
+def distinct_prime_factors(n):
+    """
+    Return the distinct prime factors of a number.
     """
     factors = []
     all_primes = primes_fast(int(np.sqrt(n)+1))    # compute the list of primes
     for p in all_primes:
-        if n % p == 0:                  # get the factors of n
+        if n % p == 0:                              # get the factors of n
             factors.append(p)
-    return factors, factors[-1] if len(factors) > 0 else None        # return the largest one
+    return factors                                  # return the list
 
 def n_pandigitals(n):
     """Return an array of the n-digit pandigital numbers."""
@@ -110,4 +122,18 @@ def is_hexagonal(x):
     else:
         return False
     
-    
+def get_factors(n):
+    '''Return all the factors of n.'''
+    # initialize the factors list
+    factors = [1]
+
+    # search for factors up to the square root of the number
+    for i in range(2, int(n**.5) + 1):
+        if n % i == 0:
+            factors.append(i)
+
+    # get the rest of the factors by dividing the number by each of its factors,
+    # then union the sets of factors to get rid of any duplicates
+    factors = set(factors).union(set([n//j for j in factors]))
+
+    return factors
