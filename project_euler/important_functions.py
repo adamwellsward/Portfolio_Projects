@@ -137,3 +137,13 @@ def get_factors(n):
     factors = set(factors).union(set([n//j for j in factors]))
 
     return factors
+
+def pascals_tri(n):
+    """Generate n rows of pascals triangle (not including the 0th row)."""
+    tri = [[1]*num for num in range(1, n + 2)]
+    if n < 2:
+        return tri
+    for i in range(2, len(tri)):
+        for j in range(1, len(tri[i])-1):
+            tri[i][j] += tri[i-1][j-1] + tri[i-1][j] - 1
+    return tri
