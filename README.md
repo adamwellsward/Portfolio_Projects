@@ -29,4 +29,4 @@ Each folder contains one of my most recent projects, as detailed below:
   
 **PROJECT EULER:**
 
-  Includes over 45 solutions (and counting!) to algorithmic [Project Euler](https://projecteuler.net/archives) coding problems. My side gig.
+  Includes over 55 solutions (and counting!) to algorithmic [Project Euler](https://projecteuler.net/archives) coding problems. My side gig.
